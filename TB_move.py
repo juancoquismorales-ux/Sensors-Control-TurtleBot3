@@ -11,8 +11,8 @@ model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
 
 # find the two tb wheel actuators
-left_actuator_id = mujoco.mj_name2id(model, mujoco.mjtOBJ_ACTUATOR, "wheel_left")
-right_actuator_id = mujoco.mj_name2id(model, mujoco.mjtOBJ_ACTUATOR, "wheel_right")
+left_actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mujoco.mjtOBJ_ACTUATOR, "wheel_left")
+right_actuator_id = mujoco.mj_name2id(model,mujoco.mjtObj.mujoco.mjtOBJ_ACTUATOR, "wheel_right")
 
 wheel_speed = 1.0
 
