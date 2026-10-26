@@ -11,18 +11,19 @@ model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
 
 # find the two tb wheel actuators
-left_actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mujoco.mjtOBJ_ACTUATOR, "wheel_left")
-right_actuator_id = mujoco.mj_name2id(model,mujoco.mjtObj.mujoco.mjtOBJ_ACTUATOR, "wheel_right")
+left_actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "wheel_left")
+right_actuator_id = mujoco.mj_name2id(model,mujoco.mjtObj.mjOBJ_ACTUATOR, "wheel_right")
 
-wheel_speed = 1.0
+left_wheel_speed = 4.0
+right_wheel_speed = 2.0
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
 
         # settting wheel speeds 
-        data.ctrl[left_actuator_id] = wheel_speed
-        data.ctrl[right_actuator_id] = wheel_speed
+        data.ctrl[left_actuator_id] = left_wheel_speed
+        data.ctrl[right_actuator_id] = right_wheel_speed
 
         mujoco.mj_step(model, data)
         viewer.sync()
