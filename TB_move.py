@@ -61,10 +61,26 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         odom = update_odometry(odom, dphi_L, dphi_R, wheel_radius, wheel_separation)
 
-        if data.time >= next_print_time: # display this print once for every second in sim
-            print(f"t={data.time:.1f}s |" f"x={odom[0]:.3f}m | "
-                   f"y={odom[1]:.3f}m | " f"heading={np.degrees(odom[2]):.1f}deg")
-            #simulation time, estimated x and y and heading in deg
+        if data.time >= next_print_time: # compare once for every second in sim
+            base_pose = data.joint("base_joint").qpos.copy() # find the tb true base position and orientation
+
+            true_x = float(base_pose[0]) # true world x 
+            true_y = float(base_pose[1]) # true world y 
+            qw, qx, qy, qz = base_pose[3:7] # read the orientation quaternion w, x, y, z order
+
+            true_head = np.arctan2(2 * (qw * qz + qx * qy), 1.0 - 2.0 * (qy**2 + qz**2))
+            #Convert Tbs 3D orientation into its heading angle in rads
+
+            #claculate the distance between true and estimated turtlebot positions.
+            position_error = np.hypot(odom[0] - true_x, odom[1] - true_y)
+
+            heading_error = odom[2] - true_head # calc estimated - true head
+            #this heading error will be shown as the shortest angle between both directions
+            heading_error = np.arctan2(np.sin(heading_error), np.cos(heading_error))
+
+            print(f"t={data.time:.1f}s | " f"odom=({odom[0]:.3f}, {odom[1]:.3f}) | " 
+                  f"pos error={position_error:.4f}m | " f"head error={np.degrees(heading_error):.2f}deg")
+            # print sim time, estimated positions, true positions, pos error, heading error
 
             next_print_time += 1.0 #schedule next 
 
