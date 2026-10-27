@@ -29,18 +29,20 @@ class TurtleBot3Model:
         return np.array([x_next, y_next, theta_next])
     
     # create function to linearise the state-space matrix A and B for error math
-    def linearised_matrix(self, v_r, omega_r):
+    def linearised_matrix(self, state_r, control_r):
+        _, _, theta_r = state_r
+        v_r, _ = control_r
         # define A matrix using reference velocities
         A = np.array([
-            [0.0, omega_r, 0.0],
-            [-omega_r, 0.0, v_r],
+            [0.0, 0.0, -v_r * np.sin(theta_r)],
+            [0.0, 0.0, v_r * np.cos(theta_r)],
             [0.0, 0.0, 0.0]
         ])
     
         # define B matrix for control        
         B = np.array([
-            [-1.0, 0.0],
-            [0.0, 0.0],
+            [np.cos(theta_r), 0.0],
+            [np.sin(theta_r), 0.0],
             [0.0, -1.0]
         ])
         
