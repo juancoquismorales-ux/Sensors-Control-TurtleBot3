@@ -56,11 +56,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         previous_left = left_angle
         previous_right = right_angle
 
-        landmark_true_pos = np.array([1.0, 0.5])
+        d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
+        
+        odom_x = estimated_state[0] + d_forward * np.cos(estimated_state[2])
+        odom_y = estimated_state[1] + d_forward * np.sin(estimated_state[2])
         
         sensor_noise = np.random.normal(0.0, 0.02, size=2)
-        
-        sensor_measurement = landmark_true_pos + sensor_noise
+        sensor_measurement = np.array([odom_x, odom_y]) + sensor_noise
         
         estimated_state, _ = ekf.update(sensor_measurement, H_matrix)
         
