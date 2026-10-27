@@ -43,7 +43,7 @@ class TurtleBot3Model:
         B = np.array([
             [np.cos(theta_r), 0.0],
             [np.sin(theta_r), 0.0],
-            [0.0, -1.0]
+            [0.0, 1.0]
         ])
         
         # return both A and B matrices
@@ -100,10 +100,10 @@ class TurtleBot3Model:
 if __name__ == "__main__":
     robot_model = TurtleBot3Model()
     
-    v_ref = 0.2
-    omega_ref = 0.1
+    state_ref = np.array([0.0, 0.0, 0.0])
+    control_ref = np.array([0.2, 0.1])
     
-    A, B = robot_model.linearised_matrix(v_ref, omega_ref)
+    A, B = robot_model.linearised_matrix(state_ref, control_ref)
     
     controllable, rank_c, C_matrix = robot_model.check_controllability(A, B)
     print(f"part a model analysis")
