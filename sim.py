@@ -65,7 +65,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         estimated_state, _ = ekf.update(sensor_measurement, H_matrix)
         
-        distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[2])
+        distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
             target_waypoint = waypoints[waypoint_idx]
