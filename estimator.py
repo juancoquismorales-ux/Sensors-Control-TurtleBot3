@@ -38,6 +38,8 @@ class TurtleBot3EKF:
         
         K = self.P @ H.T @ np.linalg.inv(S)
         
+        self.x_hat = self.x_hat + K @ y
+        
         self.x_hat[2] = np.arctan2(np.sin(self.x_hat[2]), np.cos(self.x_hat[2]))
         
         I = np.eye(len(self.x_hat))
