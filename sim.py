@@ -7,7 +7,7 @@ from model import TurtleBot3Model
 from estimator import TurtleBot3EKF
 from controller import TurtleBot3Controller
 
-model_path = (Path(__file__).parent / "robotis_tb3" / "scene_turtlebot3_waffle_pi.xml")
+model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
