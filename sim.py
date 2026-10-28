@@ -17,9 +17,10 @@ ekf = TurtleBot3EKF(dt=dt)
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.0, 0.0, 0.0]),
-    np.array([1.0, 1.0, 0.0]),
-    np.array([0.0, 1.0, 0.0]),
+    np.array([0.5, 0.0, 0.0]),
+    np.array([0.5, -0.5, 0.0]),
+    np.array([-0.3, -1.2, 0.0]),
+    np.array([-1.0, 0.0, 0.0]),
     np.array([0.0, 0.0, 0.0])
 ]
 waypoint_idx = 0
