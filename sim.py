@@ -12,8 +12,27 @@ model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
 
-dt, track_width, wheel_radius = 0.002, 0.288, 0.033
+
+#Here we are making sure that TB starting at the south wall facing the north wall
+start_state = np.array([-1.5, 0, 0]) # x and y heading
+base_start = data.joint("base_joint").qpos # base position and orientation
+base_start[0:2] = start_state[0:2] # setting the x and y for start pos
+#set orientation using the w, x, y, z quaternion
+base_start[3:7] = [ np.cos(start_state[2] / 2), #quaternion w 
+                   0.0, #quaternion x
+                   0.0, # quaternion y
+                   np.sin(start_state[2] / 2) #quaternion z
+                   ]
+mujoco.mj_forward(model, data) # update sim new pose
+
+
+# here we need to match the EKFs prediction interval to mujocos timestep
+dt = model.opt.timestep 
+track_width, wheel_radius = 0.288, 0.033
+
 ekf = TurtleBot3EKF(dt=dt)
+#Since we changed starting pose we want to initialise the estimated pose at the same start pose
+ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
@@ -37,7 +56,14 @@ right_actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "whee
 previous_left = float(data.joint("wheel_left").qpos[0])
 previous_right = float(data.joint("wheel_right").qpos[0])
 
-v_cmd, omega_cmd = 0.0, 0.0
+v_cmd, omega_cmd = 0.0, 0.0 # 0 turn rate and forward speed for starting pose check
+
+# converting the TB foward speed and turn rates into left and right wheel speed for simplicity
+left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
+# Send the left and right wheels target angular speeds in rad/s to Mujoco
+data.ctrl[left_actuator_id] = left_speed
+data.ctrl[right_actuator_id] = right_speed
+
 next_print_time = 1.0
 
 print(f"starting mujoco ekf and controller sim")
