@@ -13,7 +13,6 @@ model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
 
-
 #Here we are making sure that TB starting at the south wall facing the north wall
 start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
@@ -40,6 +39,7 @@ waypoints = [
     np.array([0.5, 0.0, 0.0]),
     np.array([0.5, -0.5, 0.0]),
     np.array([-0.3, -1.2, 0.0]),
+    np.array([-1.0, -0.6, 0.0]),
     np.array([-1.0, 0.0, 0.0]),
     np.array([0.0, 0.0, 0.0])
 ]
@@ -90,7 +90,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         odom_x = estimated_state[0] + d_forward * np.cos(estimated_state[2])
         odom_y = estimated_state[1] + d_forward * np.sin(estimated_state[2])
-        
+                
         sensor_noise = np.random.normal(0.0, 0.02, size=2)
         sensor_measurement = np.array([odom_x, odom_y]) + sensor_noise
         
@@ -103,7 +103,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
             
         v_cmd, omega_cmd = controller.compute_control_command(estimated_state, target_waypoint)
-        
+                
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
         data.ctrl[left_actuator_id] = left_speed

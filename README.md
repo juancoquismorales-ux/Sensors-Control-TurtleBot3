@@ -7,9 +7,9 @@ Sensors and Control Integrated Project: Turtlebot navigation and visual docking 
 * **Platform:** TurtleBot3 Waffle Pi (in MuJoCo)
 
 ## 2. Team Members and Contributions
-* **[Juan Coquis Morales]:** Worked on robot mnodelling, equations, and system analysis (Controllability and Observability)
-* **[Derek Chua]:** Built the Extended Kalman Filter (EKF) for state estimation ion and sensor integration
-* **[Nicholas Ricci]:** Developed the waypoint tracking controller and integrated into MuJoCo simulation
+* **[Juan Coquis Morales]:** Created the MuJoCo simulation environment, custom room track layout (`simRoom.xml`), and managed repository organisation / Git workflow.
+* **[Derek Chua]:** Developed the Extended Kalman Filter (EKF) estimator (`estimator.py`) and integraated the main simulation loop (`sim.py`).
+* **[Nicholas Ricci]:** Developed the waypoint tracking controller (`controller.py`).
 
 ## 3. How the System Works
 1. **Modelling (`model.py`):** Defines how the robot moves using unicycle kinematics and checks that the system can be fully controlled and observed.
@@ -25,3 +25,6 @@ Sensors and Control Integrated Project: Turtlebot navigation and visual docking 
 * `simRoom.xml` - Custom simulation room layout with track (walls, obstacles, and charging station).
 
 ## 5. Gen AI Declaration
+- **Tools used:** Gemini (Google AI) and ChatGPT (OpenAI)
+- **Purpose:** Used for debugging Python syntax, explaining complex EKF matrix equations, brainstorming control structures, and structuring project documentation for repository.
+
