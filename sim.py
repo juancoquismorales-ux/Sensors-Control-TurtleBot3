@@ -1,6 +1,7 @@
 import time
 import mujoco
 import mujoco.viewer
+import cv2
 from pathlib import Path
 import numpy as np
 from model import TurtleBot3Model
@@ -11,6 +12,13 @@ model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
+
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+aruco_params = cv2.aruco.DetectorParameters()
+detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+
+cam_width, cam_height = 640, 480
+renderer = mujoco.Renderer(model, height=cam_height, width=cam_width)
 
 #Here we are making sure that TB starting at the south wall facing the north wall
 start_state = np.array([-1.5, 0, 0]) # x and y heading
@@ -92,6 +100,15 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         sensor_measurement = np.array([odom_x, odom_y]) + sensor_noise
         
         estimated_state, _ = ekf.update(sensor_measurement, H_matrix)
+        
+        renderer.update_scene(data)
+        rgb_img = renderer.render()
+        
+        gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
+        corners, ids, rejected = detector.detectMarkers(gray_img)
+        
+        if ids is not None:
+            print(f"ArUco Tag deteected ID: {ids.flatten()}")
         
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
