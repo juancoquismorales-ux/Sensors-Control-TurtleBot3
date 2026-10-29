@@ -6,6 +6,7 @@ import numpy as np
 from model import TurtleBot3Model
 from estimator import TurtleBot3EKF
 from controller import TurtleBot3Controller
+from lidar import read_lidar
 
 model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 
@@ -68,6 +69,8 @@ next_print_time = 1.0
 
 print(f"starting mujoco ekf and controller sim")
 
+next_scan_time = 0.0 # Take the first scan when sim starts 
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
@@ -107,12 +110,27 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         data.ctrl[right_actuator_id] = right_speed
         
         mujoco.mj_step(model, data)
-        
+
+        if data.time >= next_scan_time: # scan every 0.1 seconds 
+            # get angles, distances and time 
+            scan_angles, scan_ranges, scan_time = read_lidar(model, data)
+
+            #schedule next scan
+            next_scan_time = data.time + 0.1 
+
+
         if data.time >= next_print_time:
             base_pose = data.joint("base_joint").qpos.copy()
             true_x, true_y = float(base_pose[0]), float(base_pose[1])
             
             print(f"t = {data.time:1f}s | est pos: ({estimated_state[0]:.3f}, {estimated_state[1]:.3f}) | target index: {waypoint_idx}")
+            
+            print(f"LIDAR | front= {scan_ranges[0]:.2f}m | "
+                  f"left={scan_ranges[90]:.2f}m | "
+                  f"back={scan_ranges[180]:.2f}m | "
+                  f"right={scan_ranges[270]:.2f}m" 
+                  )
+            
             next_print_time += 1.0
             
         viewer.sync()
