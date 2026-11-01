@@ -1,6 +1,6 @@
 import numpy as np
 import mujoco
-from lidar import read_lidar
+
 
 #Return a ideal scan with 6m lim
 def read_lidar(model, data, max_range=6.0):
@@ -18,7 +18,7 @@ def read_lidar(model, data, max_range=6.0):
     ranges = np.full(angles.shape, np.inf)
 
 #
-    groups = np.array([1, 0, 0, 0, 0, 0], dtype=np.unit8)
+    groups = np.array([1, 0, 0, 0, 0, 0], dtype=np.uint8)
     base_id = model.body("base").id #identify robot base for exclusion
     hit_id = np.empty(1, dtype=np.int32)# storage for intersected obj ID
 
