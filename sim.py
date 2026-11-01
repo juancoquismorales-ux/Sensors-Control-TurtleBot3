@@ -104,8 +104,12 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         estimated_state, _ = ekf.update(sensor_measurement, H_matrix)
         
-        renderer.update_scene(data)
+        renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
         rgb_img = renderer.render()
+
+        display_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR) # convert to BGR for OpenCV display
+        cv2.imshow("TurtleBot3 Camera View", display_img) # show camera view
+        cv2.waitKey(1) # help refresh the opencv window
         
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         corners, ids, rejected = detector.detectMarkers(gray_img)
