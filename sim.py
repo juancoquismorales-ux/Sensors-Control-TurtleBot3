@@ -21,6 +21,18 @@ detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
 cam_width, cam_height = 640, 480
 renderer = mujoco.Renderer(model, height=cam_height, width=cam_width)
 
+marker_size = 0.30 # marker width in metres
+camera_id = model.camera("front_camera").id # find robot camera in mujoco xml file
+vertical_fov = np.deg2rad(model.cam_fovy[camera_id]) # convert fov to radians
+focal_points = cam_height / (2 * np.tan(vertical_fov / 2)) # calculate focal length in pixels
+
+# describe how the configured pinhole camera projects 3D points onto the 2D image plane
+camera_matrix = np.array([[focal_points, 0, cam_width / 2],
+                          [0, focal_points, cam_height / 2],
+                          [0, 0, 1]]) 
+distortion = np.zeros(5) # no distortion in mujoco camera
+
+
 #Here we are making sure that TB starting at the south wall facing the north wall
 start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
@@ -113,17 +125,21 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         corners, ids, rejected = detector.detectMarkers(gray_img)
-        
-        if ids is not None:
-            print(f"ArUco Tag deteected ID: {ids.flatten()}")
-        
+        marker_position = None 
+        if ids is not None: #only continue if a marker is detected
+            for i, marker_id in enumerate(ids.flatten()): #check id's
+                if marker_id == 7: # only want marker 7
+                    # calcluate marker pose using the camera matrix and distortion coefficients ( relative to camera frame)
+                    rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
+                    marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker
+
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
             
-        v_cmd, omega_cmd = controller.compute_control_command(estimated_state, target_waypoint)
+        v_cmd, omega_cmd = 0, 0 # i changed this 
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
@@ -152,8 +168,16 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                   f"right={scan_ranges[270]:.2f}m" 
                   )
             
+            if marker_position is not None:
+                camera_x, camera_y, camera_z = marker_position 
+                camera_bearing = np.arctan2(-camera_x, camera_z) 
+
+                print(f"Marker 7 detected at camera frame: z={camera_z:.3f}m, bearing={np.rad2deg(camera_bearing):.1f}deg")
+            else: 
+                print(f"Marker 7 not detected in camera view")
+
             next_print_time += 1.0
-            
+
         viewer.sync()
         
         time_until_next_step = model.opt.timestep - (time.time() - step_start)
