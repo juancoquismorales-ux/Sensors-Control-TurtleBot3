@@ -18,6 +18,8 @@ class TurtleBot3EKF:
         self.Q = np.diag([0.01, 0.01, 0.005])
         # set teh measurement noise matrix (how much we trust teh sensors)
         self.R = np.diag([0.05, 0.05])
+        # initial camera noise assumptions, These are starting valus used t validate, unmeasured calibration results
+        self.R_marker = np.diag([0.05**2, np.deg2rad(2)**2]) # marker position and bearing noise
         
     # create function to predict the next state using teh control v and omega
     def predict(self, v, omega):
@@ -61,6 +63,34 @@ class TurtleBot3EKF:
         
         # return updated state estimate and new covariance matrix P
         return self.x_hat, self.P
+
+# week 7 la h_rb H_rb and ekf_update
+    def update_with_marker(self, marker_position, measurement):
+        dx = marker_position[0] - self.x_hat[0]# calculate the difference in x between the marker and the estimated state
+        dy = marker_position[1] - self.x_hat[1]# calculate the difference in y between the marker and the estimated state
+        q = dx**2 + dy**2 # calculate the squared distance between the marker and the estimated state
+        distance = np.sqrt(q) #predicted range to the marker
+
+        bearing = np.arctan2(dy, dx) - self.x_hat[2] # calculate the bearing to the marker relative to the robot's heading
+        bearing = np.arctan2(np.sin(bearing), np.cos(bearing)) # wrap the bearing to be within -pi and pi
+        predicted_measurement = np.array([distance, bearing]) # create the predicted measurement vector
+
+        # week 7 measurement jacobian
+        H = np.array([[-dx / distance, -dy / distance, 0],
+                      [dy / q, -dx / q, -1]]) 
+# create the measurement jacobian matrix H based on the marker position and estimated state
+
+        residual = measurement - predicted_measurement # calculate the residual error between actual and predicted measurement
+        residual[1] = np.arctan2(np.sin(residual[1]), np.cos(residual[1])) # wrap the bearing residual to be within -pi and pi
+
+        S = H @ self.P @ H.T + self.R_marker # calculate the innovation covariance S
+        K = self.P @ H.T @ np.linalg.inv(S) # calculate the kalman gain K
+        self.x_hat = self.x_hat + K @ residual # update the state estimate using the kalman gain and residual
+        self.x_hat[2] = np.arctan2(np.sin(self.x_hat[2]), np.cos(self.x_hat[2])) # wrap the heading angle to be within -pi and pi
+        self.P = (np.eye(3) - K @ H) @ self.P # update the error covariance matrix P to reduce uncertainty after marker update.
+
+        return self.x_hat, self.P # return the updated state estimate and covariance matrix
+
     
 if __name__ == "__main__":
     ekf = TurtleBot3EKF(dt=0.01)

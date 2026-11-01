@@ -89,13 +89,12 @@ next_print_time = 1.0
 
 print(f"starting mujoco ekf and controller sim")
 
-next_scan_time = 0.0 # Take the first scan when sim starts 
+next_scan_time = 0.0 # Take the first scan when sim starts
+next_camera_update = 0.0 # Take the first camera update when sim starts
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
-        
-        estimated_state = ekf.predict(v_cmd, omega_cmd)
         
         left_angle = float(data.joint("wheel_left").qpos[0])
         right_angle = float(data.joint("wheel_right").qpos[0])
@@ -106,16 +105,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         previous_left = left_angle
         previous_right = right_angle
 
+        # calculate the forward distance and heading change based on wheel rotations
         d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
-        
-        odom_x = estimated_state[0] + d_forward * np.cos(estimated_state[2])
-        odom_y = estimated_state[1] + d_forward * np.sin(estimated_state[2])
-                
-        sensor_noise = np.random.normal(0.0, 0.02, size=2)
-        sensor_measurement = np.array([odom_x, odom_y]) + sensor_noise
-        
-        estimated_state, _ = ekf.update(sensor_measurement, H_matrix)
-        
+        d_heading = wheel_radius *(dphi_R - dphi_L) / track_width
+
+        measured_v = d_forward / dt # calculate the measured forward speed in m/s
+        measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
+        estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
+
         renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
         rgb_img = renderer.render()
 
@@ -132,14 +129,32 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     # calcluate marker pose using the camera matrix and distortion coefficients ( relative to camera frame)
                     rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
                     marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker
+        if data.time >= next_camera_update:
+            if marker_position is not None:
+                    
+                    forward = marker_position[2] + 0.10 # distance in front of the camera
+                    left = -marker_position[0] # left is negative x in camera frame
+
+                    measurement = np.array([np.hypot(forward, left), np.arctan2(left, forward)]) 
+                    # calculate the range and bearing to the marker week 7 ekf update
+
+                    marker_position_world = np.array([1.939, 0]) # known world position of the marker in the mujoco sim room
+                    # update the EKF with the marker measurement
+                    estimated_state, _ = ekf.update_with_marker(marker_position_world, measurement)     
+
+            next_camera_update = data.time + 0.1 # schedule next camera update
 
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
-            
-        v_cmd, omega_cmd = 0, 0 # i changed this 
+
+         # validation test to make sure the TB is not moving during the first 4 seconds of the sim   
+        if 1 <= data.time < 4:    
+            v_cmd, omega_cmd = 0.08, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
+        else:
+            v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
@@ -159,6 +174,27 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if data.time >= next_print_time:
             base_pose = data.joint("base_joint").qpos.copy()
             true_x, true_y = float(base_pose[0]), float(base_pose[1])
+
+            # extract true heading from sim orientation quaternion (w, x, y, z) using the formula for yaw angle
+            qw, qx, qy, qz = base_pose[3:7]
+            true_heading = np.arctan2(2 * (qw * qz + qx * qy), 1 - 2 * (qy**2 + qz**2))
+
+            # calculate the position error between estimated and true position
+            position_error = np.hypot(estimated_state[0] - true_x, estimated_state[1] - true_y) 
+            heading_error = estimated_state[2] - true_heading # calculate the heading error
+            # wrap the heading error to be within -pi and pi
+            heading_error = np.arctan2(np.sin(heading_error), np.cos(heading_error)) 
+
+            sigma = np.sqrt(np.diag(ekf.P)) # calculate the standard deviation of the state estimate
+
+            print(
+                f"CHECK | true=({true_x:.3f}, {true_y:.3f})m | "
+                f"position error={position_error:.3f}m | "
+                f"heading error={np.rad2deg(heading_error):.2f}deg | "
+                f"sigma x/y=({sigma[0]:.3f}, {sigma[1]:.3f}m) | "
+                f"sigma heading={np.degrees(sigma[2]):.2f}deg"
+            )
+
             
             print(f"t = {data.time:1f}s | est pos: ({estimated_state[0]:.3f}, {estimated_state[1]:.3f}) | target index: {waypoint_idx}")
             
