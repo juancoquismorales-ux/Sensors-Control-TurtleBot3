@@ -15,7 +15,7 @@ class TurtleBot3EKF:
         # initialise the error covariance matrix P with an initial uncertainty
         self.P = np.diag([0.1, 0.1, 0.1])
         # set the process nosie matrix Q (how much we trust the motion model)
-        self.Q = np.diag([0.01, 0.01, 0.005])
+        self.Q_rate = np.diag([0.01, 0.01, 0.005])
         # set teh measurement noise matrix (how much we trust teh sensors)
         self.R = np.diag([0.05, 0.05])
         # initial camera noise assumptions, These are starting valus used t validate, unmeasured calibration results
@@ -35,9 +35,9 @@ class TurtleBot3EKF:
             [0.0, 1.0, v * np.cos(theta) * self.dt],
             [0.0, 0.0, 1.0]
         ])
-        
-        # update the error covariance matrix using the prediction equation --> F * P @ F^T + Q
-        self.P = F @ self.P @ F.T + self.Q
+        # scale the assumed process variance by the timestep to account for the discrete time update
+        Q_step = self.Q_rate * self.dt 
+        self.P = F @ self.P @ F.T + Q_step 
         
         # return the predicted state vector
         return self.x_hat
