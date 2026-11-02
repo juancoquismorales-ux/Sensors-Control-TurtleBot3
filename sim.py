@@ -49,6 +49,7 @@ mujoco.mj_forward(model, data) # update sim new pose
 # here we need to match the EKFs prediction interval to mujocos timestep
 dt = model.opt.timestep 
 track_width, wheel_radius = 0.288, 0.033
+odometry_turn_scale = 0.76
 
 ekf = TurtleBot3EKF(dt=dt)
 #Since we changed starting pose we want to initialise the estimated pose at the same start pose
@@ -56,8 +57,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.2, 0.25, 0.0]),
-    np.array([1.8, 0.0, 0.0])
+    np.array([1.3, -0.2, 0.0]),
 ]
 
 waypoint_idx = 0
@@ -74,8 +74,7 @@ right_actuator_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_ACTUATOR, "whee
 previous_left = float(data.joint("wheel_left").qpos[0])
 previous_right = float(data.joint("wheel_right").qpos[0])
 
-v_cmd, omega_cmd = 0.0, 0.0 # 0 turn rate and forward speed for starting pose check
-
+v_cmd, omega_cmd = 0, 0
 # converting the TB foward speed and turn rates into left and right wheel speed for simplicity
 left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
 # Send the left and right wheels target angular speeds in rad/s to Mujoco
@@ -93,6 +92,10 @@ scan_angles, scan_ranges, scan_time = read_lidar(model, data)
 
 wheel_heading = float(start_state[2]) # wheel heading for comparrison
 
+docking_mode = False # remember if docking stage is active
+last_marker_time = -np.inf # recored last successful detection
+docking_distance = 0.5  # week 9s camera-marker depth 
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
@@ -108,7 +111,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
          # calculate the forward distance and heading change based on wheel rotations
         d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
-        d_heading = wheel_radius *(dphi_R - dphi_L) / track_width
+        d_heading = odometry_turn_scale * wheel_radius * (dphi_R - dphi_L) / track_width
         # heading claculated from wheel rot
         wheel_heading += d_heading
 
@@ -131,10 +134,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             if ids is not None:
                 for i, marker_id in enumerate(ids.flatten()):
                     if marker_id == 7:
-
-
                         rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
                         marker_position = tvecs[0, 0].copy()
+                        last_marker_time = float(data.time) # record when it was dock was seen
 
                         forward = marker_position[2] + 0.10 # distance in front of the camera
                         left = -marker_position[0] # left is negative x in camera frame
@@ -157,14 +159,60 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         is_final_goal = (waypoint_idx == len(waypoints) -1)
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
-        if is_final_goal and distance_to_goal < 0.25:
-            v_cmd, omega_cmd = 0.0, 0.0
-        else:
-            # compute the control commands using the current estimated state and target waypoint
-            #v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
-                #estimated_state, target_waypoint, scan_ranges)
-                v_cmd, omega_cmd = 0, 0.7
+
+        marker_recent = data.time - last_marker_time <= 0.2 # check is marker 7 was detected recently
+
+        if is_final_goal and distance_to_goal < 0.25 and marker_recent: # enter docking mode near final approch 
+            docking_mode = True # stay in docking mode
+
+        if docking_mode: # if within the approach area use the visual docking
+            if not marker_recent: # if not check last marker detection
+                v_cmd, omega_cmd = 0, 0 # stop when camera loses marker or dock 
+            else:
+                # calculate dock in world using the robots pose
+                dx = 1.939 - estimated_state[0] # markers x - robot x
+                dy  = -estimated_state[1] # marker y is 0 so just - robot y
+                theta = estimated_state[2] # robot heading. Estimation not true
                 
+                # Tb forward and left directions. used world displacement
+                forward = np.cos(theta) * dx + np.sin(theta) * dy
+                left = -np.sin(theta) * dx + np.cos(theta) * dy
+                # relative camera estimated marker 
+                z_M = forward - 0.10 # camera displacement off tb body
+                x_M = -left # our cameras x, points in the negative left direction
+
+                # week 9 lab formula which will help us drive toward the marker 
+                v_cmd = 0.5 * (z_M - docking_distance)
+
+                # same week 9 lab helps us to improve tb movement when camera has marker on the left or on the right
+                omega_cmd = -1.5 * np.arctan2(x_M, z_M)
+
+                v_cmd = np.clip(v_cmd, 0, 0.10) # restric speeds between 0-0.1m/s
+                omega_cmd = np.clip(omega_cmd, -2.84, 2.84) # angular limits which are use by our contorller
+
+                # aruco marker estimate relative to the camera on tb
+                bearing = np.arctan2(x_M, z_M)
+
+                # Tb stops if the ekf estimation of the marker is withing 3cm of desired waypoint
+                #  and if marker is within 3 degrees of camera
+                if (abs(z_M - docking_distance) < 0.03 and abs(bearing) < np.deg2rad(3)):
+                    v_cmd, omega_cmd = 0, 0 #stop motion 
+                
+                # use a combination of scan angles to check upcoming areas
+                front_ranges = np.concatenate((scan_ranges[330:], scan_ranges[:30]))
+
+                # stop everything and override docking sequence if the smallest distance in front of the camera reading is under 0.4m 
+                # so tb cannot get too close and collide with anything when EKF is estimate is wrong 
+                if np.min(front_ranges) < 0.4:
+                    v_cmd, omega_cmd = 0, 0
+
+        else:
+            # whilst the docking is inactive use waypoints and EKF estimation
+            # ( let controller respond to obstacle collision detection etc)
+            v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
+                estimated_state, target_waypoint, scan_ranges)
+            
+
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
         data.ctrl[left_actuator_id] = left_speed
