@@ -27,6 +27,7 @@
     <geom name="west_wall" type="box" pos="-2 0 0.5" size="0.05 2 0.5" rgba="0.7 0.7 0.7 1"/>
     <geom name="Block1" type="box" pos="0.8 0.5 0.2" size="0.2 0.2 0.2" rgba="0.8 0.3 0.21 1"/> 
     <geom name="Block2" type="box" pos="-0.7 -0.6 0.2" size="0.25 0.2 0.2" rgba="0.2 0.6 0.8 1"/> 
+    <geom name="Block3" type="box" pos="-0.3 0 0.2" size="0.15 0.15 0.2" rgba="0.8 0.7 0.2 1" />
     <geom name="aruco_charging_station" type="box" pos="1.95 0.0 0.2" size="0.01 0.3 0.2" rgba="1.0 1.0 1.0 1"/>
     <geom name="aruco_marker" type="plane" pos="1.939 0 0.2" xyaxes="0 -1 0 0 0 1"
      size="0.06 0.06 0.001" material="aruco_material" contype="0" conaffinity="0" group="2"/>
