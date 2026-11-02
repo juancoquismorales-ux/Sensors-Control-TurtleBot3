@@ -90,6 +90,9 @@ next_scan_time = 0.0 # Take the first scan when sim starts
 next_camera_update = 0.0 # Take the first camera update when sim starts
 marker_position = None # initialise the marker position to None
 scan_angles, scan_ranges, scan_time = read_lidar(model, data)
+
+wheel_heading = float(start_state[2]) # wheel heading for comparrison
+
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
@@ -106,6 +109,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
          # calculate the forward distance and heading change based on wheel rotations
         d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
         d_heading = wheel_radius *(dphi_R - dphi_L) / track_width
+        # heading claculated from wheel rot
+        wheel_heading += d_heading
 
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
@@ -156,8 +161,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             v_cmd, omega_cmd = 0.0, 0.0
         else:
             # compute the control commands using the current estimated state and target waypoint
-            v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
-                estimated_state, target_waypoint, scan_ranges)
+            #v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
+                #estimated_state, target_waypoint, scan_ranges)
+                v_cmd, omega_cmd = 0, 0.7
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
@@ -206,6 +212,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                   f"back={scan_ranges[180]:.2f}m | "
                   f"right={scan_ranges[270]:.2f}m" 
                   )
+
+            print(f"check heading | wheels={np.degrees(wheel_heading):.1f}deg | " 
+                  f"EKF={np.degrees(estimated_state[2]):.1f}deg | "
+                  f"true={np.degrees(true_heading):.1f}deg "
+                            )
             
             if marker_position is not None:
                 camera_x, camera_y, camera_z = marker_position 
