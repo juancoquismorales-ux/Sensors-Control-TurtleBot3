@@ -91,6 +91,7 @@ print(f"starting mujoco ekf and controller sim")
 
 next_scan_time = 0.0 # Take the first scan when sim starts
 next_camera_update = 0.0 # Take the first camera update when sim starts
+next_ui_update = 0.0
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -123,13 +124,25 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         corners, ids, rejected = detector.detectMarkers(gray_img)
         marker_position = None 
+        """
         if ids is not None: #only continue if a marker is detected
             for i, marker_id in enumerate(ids.flatten()): #check id's
                 if marker_id == 7: # only want marker 7
                     # calcluate marker pose using the camera matrix and distortion coefficients ( relative to camera frame)
                     rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
-                    marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker
+                    marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker \
+                        """
         if data.time >= next_camera_update:
+            renderer.update_scene(data, camera="front_camera")
+            rgb_img = renderer.render()
+            
+            gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
+            corners, ids, rejected = detector.detectMarkers(gray_img)
+            if ids is not None:
+                for i, marker_id in enumerate(ids.flatten()):
+                    if marker_id == 7:
+                        rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
+                        marker_position = tvecs[0, 0].copy()
             if marker_position is not None:
                     
                     forward = marker_position[2] + 0.10 # distance in front of the camera
@@ -142,7 +155,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     # update the EKF with the marker measurement
                     estimated_state, _ = ekf.update_with_marker(marker_position_world, measurement)     
 
-            next_camera_update = data.time + 0.1 # schedule next camera update
+            next_camera_update = data.time + 0.05 # schedule next camera update
 
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
@@ -184,6 +197,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             heading_error = estimated_state[2] - true_heading # calculate the heading error
             # wrap the heading error to be within -pi and pi
             heading_error = np.arctan2(np.sin(heading_error), np.cos(heading_error)) 
+        
 
             sigma = np.sqrt(np.diag(ekf.P)) # calculate the standard deviation of the state estimate
 
@@ -213,6 +227,13 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 print(f"Marker 7 not detected in camera view")
 
             next_print_time += 1.0
+
+        if data.time >= next_ui_update:
+            renderer.update_scene(data, camera="front_camera")
+            disp_img = cv2.cvtColor(renderer.render(), cv2.COLOR_RGB2BGR)
+            cv2.imshow("TurtleBot3 Camera View", disp_img)
+            cv2.waitKey(1)
+            next_ui_update = data.time + 0.033
 
         viewer.sync()
         
