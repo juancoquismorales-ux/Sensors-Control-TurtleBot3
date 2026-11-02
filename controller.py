@@ -65,9 +65,12 @@ class TurtleBot3Controller:
         # calculate the right wheel angular velocity using differential drive equations
         omega_right = (v + (self.L / 2.0) * omega) /self.r
 
-        # scale the wheel speeds if they exceed the maximum allowed speed of 7.88 rad/s
+        # scale down both wheel speeds proportionally if eithe rexceeds the maximum actuator speed of 7.88 rad/s, so turtlebot stays on arc
+        ## scale the wheel speeds if they exceed the maximum allowed speed of 7.88 rad/s
         scale = max(1, abs(omega_left) / 7.88, abs(omega_right) / 7.88)
+        # apply the wheel speed scaling to the left wheel command
         omega_left /= scale
+        # apply the wheel speed scaling to the right wheel command
         omega_right /= scale
         
         # return teh left and right wheel speeds for the actuators

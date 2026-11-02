@@ -1,5 +1,5 @@
 import numpy as np
-# import our robot model class
+# import our turtlebot model class
 from model import TurtleBot3Model
 
 # create class for ekf for the turtlebot 
@@ -14,7 +14,7 @@ class TurtleBot3EKF:
         self.x_hat = np.zeros(3)
         # initialise the error covariance matrix P with an initial uncertainty
         self.P = np.diag([0.1, 0.1, 0.1])
-        # set how fast the uncertaintiy builds up over time during the motion of our robot
+        # set how fast the uncertaintiy builds up over time during the motion of our turtlebot
         self.Q_rate = np.diag([0.01, 0.01, 0.005])
         # set teh measurement noise matrix (how much we trust teh sensors)
         self.R = np.diag([0.05, 0.05])
@@ -79,8 +79,8 @@ class TurtleBot3EKF:
         # square root the squared distance to get the predicted distance or the euclidean distance
         distance = np.sqrt(q) #predicted range to the marker
 
-        # calculate the angle or bearing to marker relative to robot heading
-        bearing = np.arctan2(dy, dx) - self.x_hat[2] # calculate the bearing to the marker relative to the robot's heading
+        # calculate the angle or bearing to marker relative to turtlebot heading
+        bearing = np.arctan2(dy, dx) - self.x_hat[2] # calculate the bearing to the marker relative to the turtlebot's heading
         # noramlise the angles to -pi and pi
         bearing = np.arctan2(np.sin(bearing), np.cos(bearing)) # wrap the bearing to be within -pi and pi
         # store the predicted measurement vector for the euclidean distance and heading

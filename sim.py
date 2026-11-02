@@ -22,7 +22,7 @@ cam_width, cam_height = 640, 480
 renderer = mujoco.Renderer(model, height=cam_height, width=cam_width)
 
 marker_size = 0.30 # marker width in metres
-camera_id = model.camera("front_camera").id # find robot camera in mujoco xml file
+camera_id = model.camera("front_camera").id # find turtlebot camera in mujoco xml file
 vertical_fov = np.deg2rad(model.cam_fovy[camera_id]) # convert fov to radians
 focal_points = cam_height / (2 * np.tan(vertical_fov / 2)) # calculate focal length in pixels
 
