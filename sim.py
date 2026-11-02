@@ -56,7 +56,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.2, 0.25, 0.0]),
+    np.array([1.3, -0.5, 0.0]),
     np.array([1.8, 0.0, 0.0])
 ]
 
