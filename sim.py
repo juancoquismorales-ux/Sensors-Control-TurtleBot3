@@ -56,12 +56,11 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.5, 0.0, 0.0]),
-    np.array([0.5, 0.0, 0.0]),
-    np.array([0.0, 0.0, 0.0])
+    np.array([1.8, 0.0, 0.0]),
+    np.array([0.8, 0.5, 0.0]),
+    np.array([-0.7, -0.6, 0.0]),
+    np.array([0.0, 0.0, 0.0])    
 ]
-
-
 """
 waypoints = [
     np.array([0.5, 0.0, 0.0]),
@@ -72,6 +71,7 @@ waypoints = [
     np.array([0.0, 0.0, 0.0])
 ]
 """
+
 waypoint_idx = 0
 target_waypoint = waypoints[waypoint_idx]
 
@@ -151,6 +151,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
             corners, ids, rejected = detector.detectMarkers(gray_img)
             if ids is not None:
+                print(f"found aruco IDs: {ids.flatten()}")
                 for i, marker_id in enumerate(ids.flatten()):
                     if marker_id == 7:
                         rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
