@@ -58,6 +58,28 @@ class TurtleBot3Controller:
         # return teh calculated linear velocity and angular velocity commands
         return v, omega
     
+    # create function to check lidar readings and adjust linear and angular velocity commands to avoid obstacles
+    def compute_obstacle_avoidance_command(self, current_state, target_waypoint, lidar_ranges, threshold=0.4):
+        # check if the ldiar ranges are available and in 360 degrees
+        if lidar_ranges is not None and len(lidar_ranges) == 360:
+            # check the avoidance cone or front cone sector from 330 to 360 degrees, as well as 0 to 30 degrees for obstaces
+            avoidance_cone = np.concatenate((lidar_ranges[330:], lidar_ranges[:30]))
+            # find the minimum distance in front of the turtlebot
+            min_dist = np.min(avoidance_cone)
+            
+            # if there is an obstacle closer than the minimum or safety distance, do this
+            if min_dist < threshold:
+                # set the lineear velocity to 0 and stop moving
+                v = 0.0 
+                # set the angular velocity to turn away from obstacle, turning left at 1.5 rad/s
+                omega = 1.5
+                
+                # return the linera and angular velocity commands to avoid the obstacle
+                return v, omega
+            
+        # if no obstacles are detected, compute the normal control commands to waypoint
+        return self.compute_control_command(current_state, target_waypoint)
+    
     # create function to convert the velocities to individual wheel actuator speeds
     def velocity_to_wheel(self, v, omega):
         # calculate teh left wheel angular velocity using differential drive equations

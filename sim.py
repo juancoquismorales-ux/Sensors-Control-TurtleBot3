@@ -92,6 +92,7 @@ print(f"starting mujoco ekf and controller sim")
 next_scan_time = 0.0 # Take the first scan when sim starts
 next_camera_update = 0.0 # Take the first camera update when sim starts
 next_ui_update = 0.0
+scan_ranges = None
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -167,11 +168,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if 1 <= data.time < 4:    
             v_cmd, omega_cmd = 0.08, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
         else:
-            v, omega = controller.compute_control_command(estimated_state, target_waypoint)
+            v, omega = controller.compute_obstacle_avoidance_command(estimated_state, target_waypoint)
             v_cmd, omega_cmd = v, omega
             # v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
             
-                
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
         data.ctrl[left_actuator_id] = left_speed
@@ -185,7 +185,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             #schedule next scan
             next_scan_time = data.time + 0.1 
-
 
         if data.time >= next_print_time:
             base_pose = data.joint("base_joint").qpos.copy()
