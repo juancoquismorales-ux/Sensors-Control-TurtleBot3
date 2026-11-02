@@ -12,8 +12,8 @@ class TurtleBot3EKF:
         self.model = TurtleBot3Model()
         # initialise the estimated state vector to zero for x, y, theta
         self.x_hat = np.zeros(3)
-        # initialise the error covariance matrix P with an initial uncertainty
-        self.P = np.diag([0.1, 0.1, 0.1])
+        # week 7 initial error covariance matrix P, which represents the uncertainty in our state estimate
+        self.P = np.diag([0.1**2, 0.1**2, np.deg2rad(5)**2])
         # set how fast the uncertaintiy builds up over time during the motion of our turtlebot
         self.Q_rate = np.diag([0.01, 0.01, 0.005])
         # set teh measurement noise matrix (how much we trust teh sensors)
