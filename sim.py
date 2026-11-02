@@ -112,27 +112,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
-
-        """
-        renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
-        rgb_img = renderer.render()
-
-        display_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR) # convert to BGR for OpenCV display
-        cv2.imshow("TurtleBot3 Camera View", display_img) # show camera view
-        cv2.waitKey(1) # help refresh the opencv window
-        
-        gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
-        corners, ids, rejected = detector.detectMarkers(gray_img)
-        """
         marker_position = None 
-        """
-        if ids is not None: #only continue if a marker is detected
-            for i, marker_id in enumerate(ids.flatten()): #check id's
-                if marker_id == 7: # only want marker 7
-                    # calcluate marker pose using the camera matrix and distortion coefficients ( relative to camera frame)
-                    rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
-                    marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker \
-                        """
         if data.time >= next_camera_update:
             marker_position = None # reset marker position to None for each camera update
             renderer.update_scene(data, camera="front_camera")
