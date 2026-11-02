@@ -70,7 +70,7 @@ class TurtleBot3Controller:
             # if there is an obstacle closer than the minimum or safety distance, do this
             if min_dist < threshold:
                 # set the lineear velocity to 0 and stop moving
-                v = 0.05
+                v = 0.0
                 
                 # calculate average clearnace on left side of turtlebot using lidar ranges from 60 to 120 degrees 
                 left_clearance = np.mean(lidar_ranges[60:120])
