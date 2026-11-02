@@ -56,7 +56,9 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([0.8, 0.0, 0.0]),
+    np.array([1.8, 0.0, 0.0]),
+    np.array([0.5, 0.0, 0.0]),
+    np.array([0.0, 0.0, 0.0])
 ]
 
 waypoint_idx = 0
@@ -144,7 +146,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             next_camera_update = data.time + 0.05 # schedule next camera update
 
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
-        if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
+        if distance_to_goal < 0.25 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
