@@ -34,7 +34,7 @@ distortion = np.zeros(5) # no distortion in mujoco camera
 
 
 #Here we are making sure that TB starting at the south wall facing the north wall
-start_state = np.array([-1.5, 0, 0]) # x and y heading
+start_state = np.array([0.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
 base_start[0:2] = start_state[0:2] # setting the x and y for start pos
 #set orientation using the w, x, y, z quaternion
@@ -56,12 +56,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([0.5, 0.0, 0.0]),
-    np.array([0.5, -0.5, 0.0]),
-    np.array([-0.3, -1.2, 0.0]),
-    np.array([-1.0, -0.6, 0.0]),
-    np.array([-1.0, 0.0, 0.0]),
-    np.array([0.0, 0.0, 0.0])
+    np.array([0.8, 0.0, 0.0]),
 ]
 waypoint_idx = 0
 target_waypoint = waypoints[waypoint_idx]
@@ -91,7 +86,7 @@ print(f"starting mujoco ekf and controller sim")
 
 next_scan_time = 0.0 # Take the first scan when sim starts
 next_camera_update = 0.0 # Take the first camera update when sim starts
-next_ui_update = 0.0
+marker_position = None # initialise the marker position to None
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -113,17 +108,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
-
-        renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
-        rgb_img = renderer.render()
-
-        display_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR) # convert to BGR for OpenCV display
-        cv2.imshow("TurtleBot3 Camera View", display_img) # show camera view
-        cv2.waitKey(1) # help refresh the opencv window
-        
-        gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
-        corners, ids, rejected = detector.detectMarkers(gray_img)
-        marker_position = None 
         """
         if ids is not None: #only continue if a marker is detected
             for i, marker_id in enumerate(ids.flatten()): #check id's
@@ -133,27 +117,35 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                     marker_position = tvecs[0, 0].copy() # extract camera frame x, y and z position of the marker \
                         """
         if data.time >= next_camera_update:
+            marker_position = None # reset marker position to None for each camera update
             renderer.update_scene(data, camera="front_camera")
             rgb_img = renderer.render()
-            
+
+            display_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
+            cv2.imshow("TurtleBot3 Camera View", display_img) # show the camera view in a window
+            cv2.waitKey(1) # wait for 1 ms to allow the window to update
+
             gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
             corners, ids, rejected = detector.detectMarkers(gray_img)
+            
             if ids is not None:
                 for i, marker_id in enumerate(ids.flatten()):
                     if marker_id == 7:
+
+
                         rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners[i], marker_size, camera_matrix, distortion)
                         marker_position = tvecs[0, 0].copy()
-            if marker_position is not None:
-                    
-                    forward = marker_position[2] + 0.10 # distance in front of the camera
-                    left = -marker_position[0] # left is negative x in camera frame
 
-                    measurement = np.array([np.hypot(forward, left), np.arctan2(left, forward)]) 
-                    # calculate the range and bearing to the marker week 7 ekf update
+                        forward = marker_position[2] + 0.10 # distance in front of the camera
+                        left = -marker_position[0] # left is negative x in camera frame
+                        #form the horizontal range and bearing measurement to the marker in the camera frame
+                        measurement = np.array([np.hypot(forward, left), np.arctan2(left, forward)]) 
+                        # calculate the range and bearing to the marker week 7 ekf update
+                        marker_position_world = np.array([1.939, 0]) # known world position of the marker in the mujoco sim room
+                        # update the EKF with the marker measurement
+                        estimated_state, _ = ekf.update_with_marker(marker_position_world, measurement)  
 
-                    marker_position_world = np.array([1.939, 0]) # known world position of the marker in the mujoco sim room
-                    # update the EKF with the marker measurement
-                    estimated_state, _ = ekf.update_with_marker(marker_position_world, measurement)     
+                        break # only process the first detected marker 7   
 
             next_camera_update = data.time + 0.05 # schedule next camera update
 
@@ -163,14 +155,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
 
-         # validation test to make sure the TB is not moving during the first 4 seconds of the sim   
-        if 1 <= data.time < 4:    
-            v_cmd, omega_cmd = 0.08, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
-        else:
-            v, omega = controller.compute_control_command(estimated_state, target_waypoint)
-            v_cmd, omega_cmd = v, omega
-            # v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
-            
+        # compute the control commands using the current estimated state and target waypoint
+        v_cmd, omega_cmd = controller.compute_control_command(estimated_state, target_waypoint)
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
@@ -230,13 +216,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 print(f"Marker 7 not detected in camera view")
 
             next_print_time += 1.0
-
-        if data.time >= next_ui_update:
-            renderer.update_scene(data, camera="front_camera")
-            disp_img = cv2.cvtColor(renderer.render(), cv2.COLOR_RGB2BGR)
-            cv2.imshow("TurtleBot3 Camera View", disp_img)
-            cv2.waitKey(1)
-            next_ui_update = data.time + 0.033
 
         viewer.sync()
         
