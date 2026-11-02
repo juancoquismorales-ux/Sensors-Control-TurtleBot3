@@ -56,6 +56,14 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
+    np.array([1.5, 0.0, 0.0]),
+    np.array([0.5, 0.0, 0.0]),
+    np.array([0.0, 0.0, 0.0])
+]
+
+
+"""
+waypoints = [
     np.array([0.5, 0.0, 0.0]),
     np.array([0.5, -0.5, 0.0]),
     np.array([-0.3, -1.2, 0.0]),
@@ -63,6 +71,7 @@ waypoints = [
     np.array([-1.0, 0.0, 0.0]),
     np.array([0.0, 0.0, 0.0])
 ]
+"""
 waypoint_idx = 0
 target_waypoint = waypoints[waypoint_idx]
 
@@ -115,6 +124,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
 
+        """
         renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
         rgb_img = renderer.render()
 
@@ -124,6 +134,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         
         gray_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2GRAY)
         corners, ids, rejected = detector.detectMarkers(gray_img)
+        """
         marker_position = None 
         """
         if ids is not None: #only continue if a marker is detected
@@ -166,9 +177,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
          # validation test to make sure the TB is not moving during the first 4 seconds of the sim   
         if 1 <= data.time < 4:    
-            v_cmd, omega_cmd = 0.08, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
+            v_cmd, omega_cmd = 1.0, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
         else:
-            v, omega = controller.compute_obstacle_avoidance_command(estimated_state, target_waypoint)
+            v, omega = controller.compute_obstacle_avoidance_command(estimated_state, target_waypoint, scan_ranges)
             v_cmd, omega_cmd = v, omega
             # v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
             
