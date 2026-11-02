@@ -56,7 +56,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.5, 0.0, 0.0]),
+    np.array([1.8, 0.0, 0.0]),
     np.array([0.5, 0.0, 0.0]),
     np.array([0.0, 0.0, 0.0])
 ]
@@ -93,6 +93,7 @@ next_ui_update = 0.0
 scan_ranges = None
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
+    marker_position = None
     while viewer.is_running():
         step_start = time.time()
         
@@ -112,7 +113,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
-        marker_position = None 
         if data.time >= next_camera_update:
             marker_position = None # reset marker position to None for each camera update
             renderer.update_scene(data, camera="front_camera")
@@ -126,7 +126,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             corners, ids, rejected = detector.detectMarkers(gray_img)
             
             if ids is not None:
-                print(f"found aruco IDs: {ids.flatten()}")
                 for i, marker_id in enumerate(ids.flatten()):
                     if marker_id == 7:
 
