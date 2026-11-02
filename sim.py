@@ -167,7 +167,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if 1 <= data.time < 4:    
             v_cmd, omega_cmd = 0.08, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
         else:
-            v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
+            v, omega = controller.compute_control_command(estimated_state, target_waypoint)
+            v_cmd, omega_cmd = v, omega
+            # v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
+            
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
