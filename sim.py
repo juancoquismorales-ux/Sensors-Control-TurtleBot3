@@ -151,9 +151,14 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
 
-        # compute the control commands using the current estimated state and target waypoint
-        v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
-            estimated_state, target_waypoint, scan_ranges)
+        is_final_goal = (waypoint_idx == len(waypoints) -1)
+        distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
+        if is_final_goal and distance_to_goal < 0.25:
+            v_cmd, omega_cmd = 0.0, 0.0
+        else:
+            # compute the control commands using the current estimated state and target waypoint
+            v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
+                estimated_state, target_waypoint, scan_ranges)
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
