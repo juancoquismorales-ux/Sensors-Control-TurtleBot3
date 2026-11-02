@@ -56,31 +56,10 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-<<<<<<< HEAD
-    np.array([1.8, 0.0, 0.0]),
-    np.array([0.8, 0.5, 0.0]),
-    np.array([-0.7, -0.6, 0.0]),
-    np.array([0.0, 0.0, 0.0])    
-=======
-<<<<<<< HEAD
-    np.array([0.8, 0.0, 0.0]),
-=======
     np.array([1.5, 0.0, 0.0]),
     np.array([0.5, 0.0, 0.0]),
     np.array([0.0, 0.0, 0.0])
->>>>>>> 333e9c77bf64ccf135c92b0ec1f9cd4b237130c5
 ]
-"""
-waypoints = [
-    np.array([0.5, 0.0, 0.0]),
-    np.array([0.5, -0.5, 0.0]),
-    np.array([-0.3, -1.2, 0.0]),
-    np.array([-1.0, -0.6, 0.0]),
-    np.array([-1.0, 0.0, 0.0]),
-    np.array([0.0, 0.0, 0.0])
->>>>>>> a09eb49765c8292783f16cef5296d2942851d0ce
-]
-"""
 
 waypoint_idx = 0
 target_waypoint = waypoints[waypoint_idx]
@@ -110,12 +89,8 @@ print(f"starting mujoco ekf and controller sim")
 
 next_scan_time = 0.0 # Take the first scan when sim starts
 next_camera_update = 0.0 # Take the first camera update when sim starts
-<<<<<<< HEAD
-marker_position = None # initialise the marker position to None
-=======
 next_ui_update = 0.0
 scan_ranges = None
->>>>>>> a09eb49765c8292783f16cef5296d2942851d0ce
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -137,8 +112,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
-<<<<<<< HEAD
-=======
 
         """
         renderer.update_scene(data, camera="front_camera") # render from camera view attached to TB3
@@ -152,7 +125,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         corners, ids, rejected = detector.detectMarkers(gray_img)
         """
         marker_position = None 
->>>>>>> a09eb49765c8292783f16cef5296d2942851d0ce
         """
         if ids is not None: #only continue if a marker is detected
             for i, marker_id in enumerate(ids.flatten()): #check id's
@@ -201,11 +173,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
 
-<<<<<<< HEAD
-        # compute the control commands using the current estimated state and target waypoint
-        v_cmd, omega_cmd = controller.compute_control_command(estimated_state, target_waypoint)
-                
-=======
          # validation test to make sure the TB is not moving during the first 4 seconds of the sim   
         if 1 <= data.time < 4:    
             v_cmd, omega_cmd = 1.0, 0  # move forward at 0.08 m/s for the first 4 seconds of the sim
@@ -214,7 +181,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             v_cmd, omega_cmd = v, omega
             # v_cmd, omega_cmd = 0, 0 # stop moving after 4 seconds of the sim
             
->>>>>>> a09eb49765c8292783f16cef5296d2942851d0ce
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
         data.ctrl[left_actuator_id] = left_speed
