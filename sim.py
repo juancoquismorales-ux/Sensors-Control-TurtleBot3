@@ -21,7 +21,7 @@ detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
 cam_width, cam_height = 640, 480
 renderer = mujoco.Renderer(model, height=cam_height, width=cam_width)
 
-marker_size = 0.30 # marker width in metres
+marker_size = 0.10 # marker width in metres
 camera_id = model.camera("front_camera").id # find turtlebot camera in mujoco xml file
 vertical_fov = np.deg2rad(model.cam_fovy[camera_id]) # convert fov to radians
 focal_points = cam_height / (2 * np.tan(vertical_fov / 2)) # calculate focal length in pixels
@@ -34,7 +34,7 @@ distortion = np.zeros(5) # no distortion in mujoco camera
 
 
 #Here we are making sure that TB starting at the south wall facing the north wall
-start_state = np.array([0.5, 0, 0]) # x and y heading
+start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
 base_start[0:2] = start_state[0:2] # setting the x and y for start pos
 #set orientation using the w, x, y, z quaternion
@@ -57,7 +57,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([1.3, -0.2, 0.0]),
+    np.array([1.1, 0, 0]),
 ]
 
 waypoint_idx = 0
@@ -94,7 +94,7 @@ wheel_heading = float(start_state[2]) # wheel heading for comparrison
 
 docking_mode = False # remember if docking stage is active
 last_marker_time = -np.inf # recored last successful detection
-docking_distance = 0.5  # week 9s camera-marker depth 
+docking_distance = 0.19  # week 9s camera-marker depth 
 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -162,12 +162,21 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         marker_recent = data.time - last_marker_time <= 0.2 # check is marker 7 was detected recently
 
-        if is_final_goal and distance_to_goal < 0.25 and marker_recent: # enter docking mode near final approch 
-            docking_mode = True # stay in docking mode
+        if is_final_goal and distance_to_goal < 0.25:
+            docking_mode = True
 
         if docking_mode: # if within the approach area use the visual docking
             if not marker_recent: # if not check last marker detection
-                v_cmd, omega_cmd = 0, 0 # stop when camera loses marker or dock 
+                # use estimated direction from tb to the known dock
+                station_bearing = np.arctan2(-estimated_state[1], 1.939 - estimated_state[0]) - estimated_state[2]
+
+                # showing the needed tb turn as the shortest angle
+                station_bearing = np.arctan2(np.sin(station_bearing), np.cos(station_bearing))
+
+                # Hold pos then turn to face the station since camera cannot see aruco
+                v_cmd = 0
+                omega_cmd = np.clip(1.5 * station_bearing, -0.7, 0.7)
+
             else:
                 # calculate dock in world using the robots pose
                 dx = 1.939 - estimated_state[0] # markers x - robot x
@@ -203,7 +212,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
                 # stop everything and override docking sequence if the smallest distance in front of the camera reading is under 0.4m 
                 # so tb cannot get too close and collide with anything when EKF is estimate is wrong 
-                if np.min(front_ranges) < 0.4:
+                if np.min(front_ranges) < 0.25:
                     v_cmd, omega_cmd = 0, 0
 
         else:
@@ -229,6 +238,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
         if data.time >= next_print_time:
             base_pose = data.joint("base_joint").qpos.copy()
+
             true_x, true_y = float(base_pose[0]), float(base_pose[1])
 
             # extract true heading from sim orientation quaternion (w, x, y, z) using the formula for yaw angle
