@@ -161,9 +161,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             v_cmd, omega_cmd = 0.0, 0.0
         else:
             # compute the control commands using the current estimated state and target waypoint
-            #v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
-                #estimated_state, target_waypoint, scan_ranges)
-                v_cmd, omega_cmd = 0, 0.7
+            v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(estimated_state, target_waypoint, scan_ranges)
                 
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
