@@ -180,6 +180,24 @@ class TurtleBot3Controller:
         # return a slow forward linear velocity and teh calculated angular velocity omega command
         return 0.10, omega
     
+    # create function to convert the velocities to individual wheel actuator speeds
+    def velocity_to_wheel(self, v, omega):
+        # calculate teh left wheel angular velocity using differential drive equations
+        omega_left = (v - (self.L / 2.0) * omega) / self.r
+        # calculate the right wheel angular velocity using differential drive equations
+        omega_right = (v + (self.L / 2.0) * omega) /self.r
+
+        # scale down both wheel speeds proportionally if eithe rexceeds the maximum actuator speed of 7.88 rad/s, so turtlebot stays on arc
+        ## scale the wheel speeds if they exceed the maximum allowed speed of 7.88 rad/s
+        scale = max(1, abs(omega_left) / 7.88, abs(omega_right) / 7.88)
+        # apply the wheel speed scaling to the left wheel command
+        omega_left /= scale
+        # apply the wheel speed scaling to the right wheel command
+        omega_right /= scale
+        
+        # return teh left and right wheel speeds for the actuators
+        return omega_left, omega_right
+    
 if __name__ == "__main__":
     controller = TurtleBot3Controller()
     
