@@ -113,9 +113,9 @@ class TurtleBot3Controller:
             self.avoiding_heading = theta + self.avoid_direction * (np.pi / 2)
             
         # if we are avoiding, do this
-        if self.avoiding is not None and self.avoid_heading is not None:
+        if self.avoiding_heading is not None:
             # calculate the turn error between teh avoidance heading and current heading theta
-            turn_error = self.avoiding - theta
+            turn_error = self.avoiding_heading - theta
             # normalise the turn error angle between -pi and pi
             turn_error = np.arctan2(np.sin(turn_error), np.cos(turn_error))
             
