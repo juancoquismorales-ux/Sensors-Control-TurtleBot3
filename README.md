@@ -1,23 +1,29 @@
 # TurtleBot3 Visual Navigation & Docking in MuJoCo
 
-Welcome to **Group 80's** repository for the Integrated Project for **Track A** in *41014 Sensors and Control for Mechatronic Systems*. In this project, we built an end-to-end autonomous navigation and visual docking pipeline for a TurtleBot3 Waffle Pi simualted in MuJoCo.
+Welcome to **Group 80's** repository for the Integrated Project for **Track A** in *41014 Sensors and Control for Mechatronic Systems*.
+
+An end-to-end autonomous navigation, state estimation, and visual docking pipeline for a TurtleBot3 Waffle Pi simulated in MuJoCo. Built for Track A.
+
+The robot safely navigates a structured room, avoids obstacles using 360-degree LiDAR ray casting, tracks its position via an Extended Kalman Filter (EKF) operating on estimated states, and docks precisely onto an ArUco-marked charging station.
 
 ---
 
 ## Project & Group Details
-* **Crouse:** 41014 Sensors and Control for Mechatronic Systems
+
+* **Course:** 41014 Sensors and Control for Mechatronic Systems
 * **Track:** Track A - Mobile Robot Visual Waypoint Navigation
 * **Group Number:** Group 80
 * **Platform:** TurtleBot3 Waffle Pi (Simulated in MuJoCo)
 
 ## Individual Contributions & Statement
-* **Juan Coquis Morales (25807761):** Designed the MuJoCo simulation environment, built the custom room track layout (`simRoom.xml`), and managed version control. Responsibilities included developing teh ArUco marker generator (`aruco.py`), the LiDAR ray-casting sensor model (`lidar.py`), co-developing the main simulation loop (`sim.py`), and defining the platform kinematic model (`model.py`).
 
-* **Derek Chua:** Responsible for developing the Extended kalman Filter state estimator (`estimator.py`) with sensor noise, built the waypoint tracking and LiDAR obstacle avoidance controller (`controller.py`), co-developed the main simulation loop (`sim.py`), and defined the platform kinematic model (`model.py`).
+* **Juan Coquis Morales (25807761):** Designed the MuJoCo simulation environment, built the custom room track layout (`simRoom.xml`), and managed version control. Responsibilities included developing the ArUco marker generator (`aruco.py`), the LiDAR ray-casting sensor model (`lidar.py`), co-developing the main simulation loop (`sim.py`), and defining the platform kinematic model (`model.py`).
+
+* **Derek Chua:** Responsible for developing the Extended Kalman Filter state estimator (`estimator.py`) with sensor noise, built the waypoint tracking and LiDAR obstacle avoidance controller (`controller.py`), co-developed the main simulation loop (`sim.py`), and defined the platform kinematic model (`model.py`).
 
 ---
 
-## Complete File Breakdwon and Purpose
+## Complete File Breakdown and Purpose
 
 Below is a detailed list of every file in the repository, explaining what it is and its specific purpose within the projects architecture:
 
@@ -45,22 +51,60 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 * **Part A: Modelling (`model.py`):** We derived the non-linear unicycle kinematics model for the TurtleBot3 and performed linearisation and rank checks on the system matrices to verify that the system is fully controllable and observable.
 
-* **Part B & C: Sensing & Estimation (`estimator.py`, `aruco.py`, `lidar.py`):** Structured coordinate transformations map local sensor measurements into global positions adn project 3D points onto the 2D image plane. The EKF deliberately balances process noise and camera measurement covariance to maintain filter consistency and handle brief line-of-sight occlusions.
+* **Part B & C: Sensing & Estimation (`estimator.py`, `aruco.py`, `lidar.py`):** Structured coordinate transformations map local sensor measurements into global positions and project 3D points onto the 2D image plane. The EKF deliberately balances process noise and camera measurement covariance to maintain filter consistency and handle brief line-of-sight occlusions.
 
 * **Part D: Control & Obstacle Avoidance (`controller.py`):** Waypoint tracking uses proportional error laws bounded by the Waffle Pi hardware constraints. When the front LiDAR cone detects an obstacle within a threshold limit, the robot executes the avoidance turn and uses side-indices LiDAR tracking to safely move around the barrier until the route clears.
 
-* **Part E: Integration & Robustness (`sim.py`):** The pipeline executs end-to-end semlessly in MuJoCo. Upon clearing waypoints, the system transitions into a visual docking loop, aligning with and stopping withint the ArUco Marker 7.
+* **Part E: Integration & Robustness (`sim.py`):** The pipeline executes end-to-end seamlessly in MuJoCo. Upon clearing waypoints, the system transitions into a visual docking loop, aligning with and stopping withint the ArUco Marker 7.
 
 ---
 
 ## Installation & Execution Instructions
 
-To run the simulation locally from a clean environment:
+Follow these terminal commands to install Python, create a virtual environment, install dependencies, and run the simulation
 
-1. Ensure Python is installed along with the required dependencies (`mujoco`, `numpy`, and `opencv-python`).
-2. Generate or 
-3. Launch the integrated simulation window `sim.py`.
+### Step 1: Install Python
 
---- 
+### Step 2: Clone Repository
+
+Clone this repository to your computer using Git:
+
+```bash
+git clone https://github.com/juancoquismorales-ux/Sensors-Control-TurtleBot3.git 
+cd Sensors-Control-TurtleBot3.0
+```
+
+### Step 3: Create & Active Python Virtual Environment
+
+Create a clean environment named `.venv`:
+
+```bash
+python -m venv .venv
+```
+
+Activate the virtual environment:
+
+```bash
+.venv\Scripts\activate
+```
+
+### Step 4: Upgrade pip & Install required Packages
+
+Upgrade `pip` to the latest version inside the environment
+
+```bash
+pip install --upgrade pip
+```
+
+Install MuJoCo, OpenCV, and Numpy
+
+```bash
+pip install mujoco
+pip install opencv-python
+pip install numpy
+```
 
 ## Generative AI Declaration
+
+* **Tools Used:** ChatGPT (OpenAI), Gemini (Google AI)
+* **Purpose:** Utilised for debugging Python syntax, structuring state-machine avoidance logic, and organising repository documentation.
