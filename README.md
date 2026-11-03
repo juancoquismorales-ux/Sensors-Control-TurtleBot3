@@ -65,6 +65,8 @@ Follow these terminal commands to install Python, create a virtual environment, 
 
 ### Step 1: Install Python
 
+Ensure Python (version 3.8 or higher) is installed on your system from [python.org](https://www.python.org/).
+
 ### Step 2: Clone Repository
 
 Clone this repository to your computer using Git:
