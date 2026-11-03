@@ -142,7 +142,7 @@ class TurtleBot3Controller:
         across = -scan_x * np.sin(goal_angle) + scan_y * np.cos(goal_angle)
         
         # check if any obstacle points block the direct route to the goal
-        route_blocked = np.any((along > 0.0) & along < goal_distance) & (np.abs(across) < 0.30)
+        route_blocked = np.any((along > 0.0) & (along < goal_distance) & (np.abs(across) < 0.30))
         
         # if the route is unblocked and turtlebot has moved closer to the goal and the front distance is less than the threshold do this
         if (not route_blocked and goal_distance < self.avoid_start_distance - 0.10 and front_dist >= threshold):
