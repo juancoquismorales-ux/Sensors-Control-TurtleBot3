@@ -42,7 +42,7 @@ distortion = np.zeros(5) # no distortion in mujoco camera
 # ===========================================================================
 
 #Here we are making sure that TB starting at the south wall facing the north wall
-start_state = np.array([-1.5, -0.5, 0]) # x and y heading
+start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
 base_start[0:2] = start_state[0:2] # setting the x and y for start pos
 #set orientation using the w, x, y, z quaternion
@@ -69,11 +69,7 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
-    np.array([-1.4, -1.45, 0]),
-    np.array([0.6, -1.45, 0]),
-    np.array([0.6, -0.30, 0]),
     np.array([1.1, 0, 0]),
-
 ]
 
 waypoint_idx = 0
@@ -332,6 +328,6 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             viewer.sync()
             next_viewer_update = data.time + 1 / 30
         
-        time_until_next_step = model.opt.timestep - (time.time() - step_start)
+        time_until_next_step = (model.opt.timestep / 3) - (time.time() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)       
