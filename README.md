@@ -1,6 +1,10 @@
 # Sensors-Control-TurtleBot3
 Sensors and Control Integrated Project: Turtlebot navigation and visual docking in MujoCo
-
+## Group number and teammates
+Group project 80
+- Juan Coquis Morales 25807761
+- Derek Chua
+- Nicholas Ricci
 ## 1. Group and Project Details
 * **Course:** 41014 Sensors and Control for Mechatronic Systems
 * **Track:** Track A - Mobile RObot Visual Waypoint Navigation
@@ -25,6 +29,6 @@ Sensors and Control Integrated Project: Turtlebot navigation and visual docking 
 * `simRoom.xml` - Custom simulation room layout with track (walls, obstacles, and charging station).
 
 ## 5. Gen AI Declaration
-- **Tools used:** Gemini (Google AI) and ChatGPT (OpenAI)
-- **Purpose:** Used for debugging Python syntax, explaining complex EKF matrix equations, brainstorming control structures, and structuring project documentation for repository.
+- **Tools used:** Gemini (Google AI) and ChatGPT (OpenAI) and VScode AI 
+- **Purpose:** Used for debugging Python syntax, explaining complex EKF matrix equations, brainstorming control structures, and structuring project documentation for repository. Further used to explain complex lab exercises, help with debugging and cleaning code. additionally the AI in VScode helped with efficiency as it finished off long lines of code as well as helping with comment impact and meaning. It did not produce and code or comments that we werent already going to use, it would only finish lines of code we were already writting and similarly with the comments. 
 
