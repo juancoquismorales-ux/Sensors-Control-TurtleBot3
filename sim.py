@@ -93,9 +93,11 @@ scan_angles, scan_ranges, scan_time = read_lidar(model, data)
 wheel_heading = float(start_state[2]) # wheel heading for comparrison
 
 docking_mode = False # remember if docking stage is active
+docked = False # remember successful dock sequence
 last_marker_time = -np.inf # recored last successful detection
 docking_distance = 0.19  # week 9s camera-marker depth 
 
+next_viewer_update = 0 # schedule viewer updates seperatly 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         step_start = time.time()
@@ -165,7 +167,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if is_final_goal and distance_to_goal < 0.25:
             docking_mode = True
 
-        if docking_mode: # if within the approach area use the visual docking
+        if docked: # if corrected docking then stop 
+            v_cmd, omega_cmd = 0, 0
+        elif docking_mode:
             if not marker_recent: # if not check last marker detection
                 # use estimated direction from tb to the known dock
                 station_bearing = np.arctan2(-estimated_state[1], 1.939 - estimated_state[0]) - estimated_state[2]
@@ -206,6 +210,8 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
                 #  and if marker is within 3 degrees of camera
                 if (abs(z_M - docking_distance) < 0.03 and abs(bearing) < np.deg2rad(3)):
                     v_cmd, omega_cmd = 0, 0 #stop motion 
+                    docked = True
+                    v_cmd, omega_cmd = 0, 0
                 
                 # use a combination of scan angles to check upcoming areas
                 front_ranges = np.concatenate((scan_ranges[330:], scan_ranges[:30]))
@@ -289,7 +295,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             next_print_time += 1.0
 
-        viewer.sync()
+        if data.time >= next_viewer_update: # update main viewer way moe pper second
+            viewer.sync()
+            next_viewer_update = data.time + 1 / 30
         
         time_until_next_step = model.opt.timestep - (time.time() - step_start)
         if time_until_next_step > 0:
