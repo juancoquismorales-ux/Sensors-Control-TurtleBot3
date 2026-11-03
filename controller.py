@@ -17,6 +17,8 @@ class TurtleBot3Controller:
         self.avoid_start_distance = np.inf
         # store the heading angle for the initila turn for avoidance
         self.avoid_heading = None
+        # emergency turn 
+        self.blocked_turn = None
 
         # set the gain for distance error (controls v)        
         self.k_rho = 0.8
@@ -91,14 +93,6 @@ class TurtleBot3Controller:
                 # return the normal control commands to waypoint if the path is clear
                 return self.compute_control_command(current_state, target_waypoint)
 
-            front_angles = np.arange(-60, 60)
-            obstacle_angle = front_angles[np.argmin(avoidance_cone)]
-
-            if obstacle_angle > 0:
-                self.avoid_direction = -1
-            elif obstacle_angle < 0: 
-                self.avoid_direction = 1.0
-            else:
                 left_clearance = np.mean(np.minimum(lidar_ranges[60:120], 6))
                 right_clearance = np.mean(np.minimum(lidar_ranges[240:300], 6))
 
@@ -145,14 +139,10 @@ class TurtleBot3Controller:
         # check if any obstacle points block the direct route to the goal
         route_blocked = np.any((along > 0.0) & (along < goal_distance) & (np.abs(across) < 0.30))
 
-       #  check whether avoidance has brough tb 5cm closer
-        made_progress = goal_distance < self.avoid_start_distance - 0.05
-        # return to waypoint tracking after progress was made and clear route
-        if made_progress and not route_blocked and front_dist >= threshold:
+        if not route_blocked and front_dist >= threshold:
             self.avoiding = False
             self.avoid_heading = None
             return self.compute_control_command(current_state, target_waypoint)
-    
         # if the front distance is less than the threshold, do this
         if front_dist < threshold:
             # match the order of rays in teh avoidance cone to -60 to 60 degrees
@@ -160,19 +150,17 @@ class TurtleBot3Controller:
             # find which side where the obstacle is
             obstacle_angle = front_angles[np.argmin(avoidance_cone)]
 
-            #emergency direction 
-            turn_direction = self.avoid_direction
             # if teh obstacle angle is greater than 0 do this
             if obstacle_angle > 0:
                 # turn to the right
-                turn_direction = -1.0
+                self.avoid_direction = -1.0
             # else if its less than 0
             elif obstacle_angle < 0:
                 # turn to the left
-                turn_direction = 1.0
+                self.avoid_direction = 1.0
 
             # return linear velocity as 0, and scale the angular velocity avoidance direction
-            return 0.0, turn_direction * 0.8
+            return 0.0, self.avoid_direction * 0.8
         
         # if the avoid direction from lidar is greater than 0 do this
         if self.avoid_direction > 0:

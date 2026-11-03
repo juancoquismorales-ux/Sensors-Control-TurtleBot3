@@ -42,7 +42,7 @@ distortion = np.zeros(5) # no distortion in mujoco camera
 # ===========================================================================
 
 #Here we are making sure that TB starting at the south wall facing the north wall
-start_state = np.array([-1.5, -0.5, 0]) # x and y heading
+start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
 base_start[0:2] = start_state[0:2] # setting the x and y for start pos
 #set orientation using the w, x, y, z quaternion
@@ -57,7 +57,7 @@ mujoco.mj_forward(model, data) # update sim new pose
 # here we need to match the EKFs prediction interval to mujocos timestep
 dt = model.opt.timestep 
 track_width, wheel_radius = 0.288, 0.033
-odometry_turn_scale = 0.76 * (108.5 / 119.1) 
+odometry_turn_scale = 0.76  
 
 # ===========================================================================
 # Derek's section: state estimation, control & docking architecture
