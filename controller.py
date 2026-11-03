@@ -113,7 +113,7 @@ class TurtleBot3Controller:
             self.avoiding_heading = theta + self.avoid_direction * (np.pi / 2)
             
         # if we are avoiding, do this
-        if self.avoiding is not None:
+        if self.avoiding is not None and self.avoid_heading is not None:
             # calculate the turn error between teh avoidance heading and current heading theta
             turn_error = self.avoiding - theta
             # normalise the turn error angle between -pi and pi
@@ -125,7 +125,7 @@ class TurtleBot3Controller:
                 return 0.0, np.clip(1.5 * turn_error, -0.8, 0.8)
             
             # reset teh avoiding state to none once turning is complete
-            self.avoiding = None
+            self.avoiding_heading = None
             
         # create an array of angles in radians for all 360 degrees
         angles = np.deg2rad(np.arange(360))
