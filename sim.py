@@ -42,7 +42,7 @@ distortion = np.zeros(5) # no distortion in mujoco camera
 # ===========================================================================
 
 #Here we are making sure that TB starting at the south wall facing the north wall
-start_state = np.array([-1.5, 0, 0]) # x and y heading
+start_state = np.array([-1.5, -0.5, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
 base_start[0:2] = start_state[0:2] # setting the x and y for start pos
 #set orientation using the w, x, y, z quaternion
@@ -69,7 +69,11 @@ ekf.x_hat = start_state.copy()
 controller = TurtleBot3Controller(track_width=track_width, wheel_radius=wheel_radius)
 
 waypoints = [
+    np.array([-1.4, -1.45, 0]),
+    np.array([0.6, -1.45, 0]),
+    np.array([0.6, -0.30, 0]),
     np.array([1.1, 0, 0]),
+
 ]
 
 waypoint_idx = 0
@@ -176,7 +180,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # Derek's Section: Waypoint Tracking, State Machine adn Visual Docking
         # ===========================================================================================
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
-        if distance_to_goal < 0.25 and waypoint_idx < len(waypoints) - 1:
+        if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
             target_waypoint = waypoints[waypoint_idx]
             print(f"reached waypoint. switching to target index {waypoint_idx}: {target_waypoint}")
