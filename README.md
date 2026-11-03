@@ -65,7 +65,7 @@ Follow these terminal commands to install Python, create a virtual environment, 
 
 ### Step 1: Install Python
 
-Ensure Python (version 3.8 or higher) is installed on your system from [python.org](https://www.python.org/).
+Ensure Python (version 3.8 or higher) is installed on your system from [python.org](https://www.python.org/downloads/).
 
 ### Step 2: Clone Repository
 
@@ -73,7 +73,7 @@ Clone this repository to your computer using Git:
 
 ```bash
 git clone https://github.com/juancoquismorales-ux/Sensors-Control-TurtleBot3.git 
-cd Sensors-Control-TurtleBot3.0
+cd Sensors-Control-TurtleBot3
 ```
 
 ### Step 3: Create & Active Python Virtual Environment
