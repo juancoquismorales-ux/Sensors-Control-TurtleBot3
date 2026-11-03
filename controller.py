@@ -121,9 +121,6 @@ class TurtleBot3Controller:
             # reset teh avoiding state to none once turning is complete
             self.avoid_heading = None
 
-        if self.avoiding and self.avoid_heading is None and front_dist < threshold:
-                    return 0.10, self.avoid_direction * 0.4
-            
         # create an array of angles in radians for all 360 degrees
         angles = np.deg2rad(np.arange(360))
         # create a boolean mask to check for finite and valid lidar ranges
