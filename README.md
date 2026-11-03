@@ -31,4 +31,5 @@ Group project 80
 ## 5. Gen AI Declaration
 - **Tools used:** Gemini (Google AI) and ChatGPT (OpenAI) and VScode AI 
 - **Purpose:** Used for debugging Python syntax, explaining complex EKF matrix equations, brainstorming control structures, and structuring project documentation for repository. Further used to explain complex lab exercises, help with debugging and cleaning code. additionally the AI in VScode helped with efficiency as it finished off long lines of code as well as helping with comment impact and meaning. It did not produce and code or comments that we werent already going to use, it would only finish lines of code we were already writting and similarly with the comments. 
+- Further, chat gpt was used to help us build goals of what to achieve, especially when major parts of code were not working it was partyicullarly helpful.
 
