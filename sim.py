@@ -9,6 +9,10 @@ from estimator import TurtleBot3EKF
 from controller import TurtleBot3Controller
 from lidar import read_lidar
 
+# ===========================================================================
+# Juan's section: environment, vision and external sensors
+# ===========================================================================
+
 model_path = (Path(__file__).parent / "robotis_tb3" / "simRoom.xml")
 
 model = mujoco.MjModel.from_xml_path(str(model_path))
@@ -33,6 +37,10 @@ camera_matrix = np.array([[focal_points, 0, cam_width / 2],
 distortion = np.zeros(5) # no distortion in mujoco camera
 
 
+# ===========================================================================
+# Shared initilisation setup
+# ===========================================================================
+
 #Here we are making sure that TB starting at the south wall facing the north wall
 start_state = np.array([-1.5, 0, 0]) # x and y heading
 base_start = data.joint("base_joint").qpos # base position and orientation
@@ -50,6 +58,10 @@ mujoco.mj_forward(model, data) # update sim new pose
 dt = model.opt.timestep 
 track_width, wheel_radius = 0.288, 0.033
 odometry_turn_scale = 0.76
+
+# ===========================================================================
+# Derek's section: state estimation, control & docking architecture
+# ===========================================================================
 
 ekf = TurtleBot3EKF(dt=dt)
 #Since we changed starting pose we want to initialise the estimated pose at the same start pose
@@ -111,6 +123,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         previous_left = left_angle
         previous_right = right_angle
 
+        # =============================================================================
+        # Derek's Section: Odometry Prediction and EKF Update Loop
+        # =============================================================================
          # calculate the forward distance and heading change based on wheel rotations
         d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
         d_heading = odometry_turn_scale * wheel_radius * (dphi_R - dphi_L) / track_width
@@ -121,6 +136,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
 
+        # =============================================================================
+        # Juan's Section: Camera Frame Rendering and ArUco Marker Detection
+        # =============================================================================
         if data.time>= next_camera_update:
             marker_position = None # reset marker position to None for each camera update
             renderer.update_scene(data, camera="front_camera")
@@ -153,6 +171,10 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             next_camera_update = data.time + 0.05 # schedule next camera update
 
+
+        # ===========================================================================================
+        # Derek's Section: Waypoint Tracking, State Machine adn Visual Docking
+        # ===========================================================================================
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.25 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
@@ -227,7 +249,9 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             v_cmd, omega_cmd = controller.compute_obstacle_avoidance_command(
                 estimated_state, target_waypoint, scan_ranges)
             
-
+        # ============================================================================
+        # Actuation and Simulation Stepping
+        # ============================================================================
         left_speed, right_speed = controller.velocity_to_wheel(v_cmd, omega_cmd)
         
         data.ctrl[left_actuator_id] = left_speed
@@ -241,7 +265,11 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
 
             #schedule next scan
             next_scan_time = data.time + 0.1 
+            
 
+        # ===========================================================
+        # Telemetry and Evaluation - Ground Truth vs Estimate
+        # ===========================================================
         if data.time >= next_print_time:
             base_pose = data.joint("base_joint").qpos.copy()
 
