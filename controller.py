@@ -90,13 +90,20 @@ class TurtleBot3Controller:
             if front_dist >= threshold:
                 # return the normal control commands to waypoint if the path is clear
                 return self.compute_control_command(current_state, target_waypoint)
-            
-            # calculate average clearance on the left side using lidar ranges from 60 to 120 degrees, and cap it at 6 meteres
-            left_clearance = np.mean(np.minimum(lidar_ranges[60:120], 6.0))
-            # calculate average clearance on the right side using lidar ranges from 240 to 300 degrees, and cap it at 6 metres
-            right_clearance = np.mean(np.minimum(lidar_ranges[240:300], 6.0))
-            # determine the avoidance direction, 1.0 to the left and -1.0 to the right
-            self.avoid_direction = 1.0 if left_clearance >= right_clearance else -1.0
+
+            front_angles = np.arange(-60, 60)
+            obstacle_angle = front_angles[np.argmin(avoidance_cone)]
+
+            if obstacle_angle > 0:
+                self.avoid_direction = -1
+            elif obstacle_angle < 0: 
+                self.avoid_direction = 1.0
+            else:
+                left_clearance = np.mean(np.minimum(lidar_ranges[60:120], 6))
+                right_clearance = np.mean(np.minimum(lidar_ranges[240:300], 6))
+
+                # determine the avoidance direction, 1.0 to the left and -1.0 to the right
+                self.avoid_direction = (1.0 if left_clearance >= right_clearance else -1.0)
             
             # set the boolean flag aoviding to true to start avoidance
             self.avoiding = True
@@ -137,32 +144,35 @@ class TurtleBot3Controller:
         
         # check if any obstacle points block the direct route to the goal
         route_blocked = np.any((along > 0.0) & (along < goal_distance) & (np.abs(across) < 0.30))
-        
-        # if the route is unblocked and turtlebot has moved closer to the goal and the front distance is less than the threshold do this
-        if not route_blocked and front_dist >= threshold:
-            # set the boolean avoiding state to false as the obstacle has been cleared
+
+       #  check whether avoidance has brough tb 5cm closer
+        made_progress = goal_distance < self.avoid_start_distance - 0.05
+        # return to waypoint tracking after progress was made and clear route
+        if made_progress and not route_blocked and front_dist >= threshold:
             self.avoiding = False
-            # return teh normal controls comands to teh waypoint
+            self.avoid_heading = None
             return self.compute_control_command(current_state, target_waypoint)
-        
+    
         # if the front distance is less than the threshold, do this
         if front_dist < threshold:
             # match the order of rays in teh avoidance cone to -60 to 60 degrees
             front_angles = np.arange(-60, 60)
             # find which side where the obstacle is
             obstacle_angle = front_angles[np.argmin(avoidance_cone)]
-            
+
+            #emergency direction 
+            turn_direction = self.avoid_direction
             # if teh obstacle angle is greater than 0 do this
             if obstacle_angle > 0:
                 # turn to the right
-                self.avoid_direction = -1.0
+                turn_direction = -1.0
             # else if its less than 0
             elif obstacle_angle < 0:
                 # turn to the left
-                self.avoid_direction = 1.0
+                turn_direction = 1.0
 
             # return linear velocity as 0, and scale the angular velocity avoidance direction
-            return 0.0, self.avoid_direction * 0.8
+            return 0.0, turn_direction * 0.8
         
         # if the avoid direction from lidar is greater than 0 do this
         if self.avoid_direction > 0:
