@@ -147,6 +147,20 @@ class TurtleBot3Controller:
         
         # if the front distance is less than the threshold, do this
         if front_dist < threshold:
+            # match the order of rays in teh avoidance cone to -60 to 60 degrees
+            front_angles = np.arange(-60, 60)
+            # find which side where the obstacle is
+            obstacle_angle = front_angles[np.argmin(avoidance_cone)]
+            
+            # if teh obstacle angle is greater than 0 do this
+            if obstacle_angle > 0:
+                # turn to the right
+                self.avoid_direction = -1.0
+            # else if its less than 0
+            elif obstacle_angle < 0:
+                # turn to the left
+                self.avoid_direction = 1.0
+
             # return linear velocity as 0, and scale the angular velocity avoidance direction
             return 0.0, self.avoid_direction * 0.8
         
