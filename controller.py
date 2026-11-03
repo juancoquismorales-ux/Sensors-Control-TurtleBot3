@@ -22,8 +22,6 @@ class TurtleBot3Controller:
         self.k_rho = 0.8
         # set teh gain for heading angle error (controls omega)
         self.k_alpha = 2.0
-        # set gain for final target orientation alignment
-        self.k_beta = -0.5
         
     # create function to calculate linear and angular velocity commands to reach desired waypoint
     def compute_control_command(self, current_state, target_waypoint):
@@ -49,21 +47,17 @@ class TurtleBot3Controller:
         # normalise the alpha angle to stay between -pi and pi
         alpha = np.arctan2(np.sin(alpha), np.cos(alpha))
         
-        # calculate the final orientation heading error beta
-        beta = theta_goal - theta
-        # normalise the beta angle to stay between -pi and pi
-        beta = np.arctan2(np.sin(beta), np.cos(beta))
-        
-        # calculate the linear velocity v proportional to teh distance error rho
-        v = self.k_rho * rho
-        # calculate the angular velocity omega using heading errors alpha an dbeta
-        omega = self.k_alpha * alpha + self.k_beta * beta
-        
-        # set a limi to the lniear speed v to the limits of the waffle pi
-        v = np.clip(v, -0.22, 0.22)
-        # set a limit to teh angular velocity omega to the limits of the waffle pi
+        omega = self.k_alpha * alpha
         omega = np.clip(omega, -2.84, 2.84)
         
+        if abs(alpha) > np.deg2rad(30):
+            v = 0.0
+        
+        else:
+            v = self.k_rho * rho * np.cos(alpha)
+            # set a limi to the lniear speed v to the limits of the waffle pi
+            v = np.clip(v, 0.0, 0.22)
+
         # return teh calculated linear velocity and angular velocity commands
         return v, omega
     
@@ -110,12 +104,12 @@ class TurtleBot3Controller:
             self.avoid_start_distance = goal_distance
             
             # calculat eth eheading angle for initial avoidance turn
-            self.avoiding_heading = theta + self.avoid_direction * (np.pi / 2)
+            self.avoid_heading = theta + self.avoid_direction * (np.pi / 2)
             
         # if we are avoiding, do this
-        if self.avoiding_heading is not None:
+        if self.avoid_heading is not None:
             # calculate the turn error between teh avoidance heading and current heading theta
-            turn_error = self.avoiding_heading - theta
+            turn_error = self.avoid_heading - theta
             # normalise the turn error angle between -pi and pi
             turn_error = np.arctan2(np.sin(turn_error), np.cos(turn_error))
             
@@ -125,7 +119,10 @@ class TurtleBot3Controller:
                 return 0.0, np.clip(1.5 * turn_error, -0.8, 0.8)
             
             # reset teh avoiding state to none once turning is complete
-            self.avoiding_heading = None
+            self.avoid_heading = None
+
+        if self.avoiding and self.avoid_heading is None and front_dist < threshold:
+                    return 0.10, self.avoid_direction * 0.4
             
         # create an array of angles in radians for all 360 degrees
         angles = np.deg2rad(np.arange(360))
@@ -145,7 +142,7 @@ class TurtleBot3Controller:
         route_blocked = np.any((along > 0.0) & (along < goal_distance) & (np.abs(across) < 0.30))
         
         # if the route is unblocked and turtlebot has moved closer to the goal and the front distance is less than the threshold do this
-        if (not route_blocked and goal_distance < self.avoid_start_distance - 0.10 and front_dist >= threshold):
+        if not route_blocked and front_dist >= threshold:
             # set the boolean avoiding state to false as the obstacle has been cleared
             self.avoiding = False
             # return teh normal controls comands to teh waypoint
