@@ -49,7 +49,7 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 ---
 
-## Evaluation Graphs & Quantitative Output
+## Evaluation Graphs, Quantitative Output & simulation feedback
 
 Upon closing the simulation window, `sim.py` automatically processes the logged telemetry data and saves two high-resolution performance graphs directly into the repository workspace. Satisfying the rubric's quantitative evaluation requirements.
 
@@ -61,6 +61,12 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
     * **What is shows:** Time-series error plots for position ($X$ and $Y$) and heading ($\theta$), bounded by $\pm 3\sigma$ consistency limits (`purple dashed lines` with shaded uncertainty regions).
     * **Purpose:** Proves EKF mathematical consistency. The error lines remain strictly bounded within the $\pm 3\sigma$ confidence intervals. Furthermore, the sharp pinch points in the uncertainty bands highlight the exact moments the camera sees the ArUco Marker 7. Fusing the external range/bearing data to constrain dead-reckoning drift.
 
+3. **`Trial evaluation`:**
+    * Between each trial we varied the starting y positions in each one. Additionally in trials 1 and 3 a black wall was removed illustrating that TurtleBot could adapt to new situations etc. Throughout all trials our controller setting did not vary so all trials portrayed the same version of our controller code.
+4. **`Failiures`:** 
+    * Amougnst each trial run our simulation did not encounter any major failiures, however, through our graph analysis we can understand that TB experienced heading drift on multiple occasions and some weird avoidance detouring made the run uneffective. Some of these erros occured due to wheel slip from the TB, but through our camera reading our EKF estimations were able to be rectified and improved.
+5.  **`Trade-offs`:** 
+     * Throughout the code production we encountered two impactful trade-offs,  TurtleBot efficiency or safe and more reliable movements, accurae estimation or  better camera-marker visibility . We decided that saftey was key in this project so our detours substantially increased time, however, our system then had much more time to respond to upcomming obstacles. Additionally, we chose to implement a better camera system as we would then have better marker 7 readings to to correct the EKF estimation errors (this only worked when marker was in camera view). 
 ---
 
 ## Demo Video
@@ -131,4 +137,4 @@ pip install matplotlib
 ## Generative AI Declaration
 
 * **Tools Used:** ChatGPT (OpenAI), Gemini (Google AI)
-* **Purpose:** Utilised for debugging Python syntax, structuring state-machine avoidance logic, and organising repository documentation.
+* **Purpose:** Utilised for debugging Python syntax, structuring state-machine avoidance logic, code reviewing when bad code was troubling our simulation, some result interprotation when results were random and unexpected, organising repository documentation and helping to edit/clean up.
