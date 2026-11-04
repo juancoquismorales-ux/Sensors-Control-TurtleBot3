@@ -87,10 +87,10 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
 
 3. **`Trial evaluation`:**
     * Between each trial, we varied the starting y positions in each one. Additionally, in trials 1 and 3, a black wall was removed, illustrating that TurtleBot could adapt to new situations etc. Throughout all trials, our controller setting did not vary, so all trials portrayed the same version of our controller code.
-    * 
+
 4. **` Failures and Limitations`:** 
     * Amongst each trial run, our simulation did not encounter any major failures, however, through our graph analysis, we can understand that TB experienced heading drift on multiple occasions, and some weird avoidance detouring made the run ineffective. Some of these errors occurred due to wheel slip from the TB combined with motion-model mismatches, but through our camera readings, our EKF estimations were able to be rectified and improved.
-    * 
+
 5.  **`Trade-offs`:** 
      * Throughout the code production, we encountered two impactful trade-offs: TurtleBot efficiency vs. safe and more reliable movements, and accurate estimation vs. better camera-marker visibility. We decided that safety was key in this project, so our detours substantially increased time, however, our system then had much more time to respond to upcoming obstacles. Additionally, we chose to implement a better camera system as we would then have better marker 7 readings to correct the EKF estimation errors (this only worked when the marker was in camera view).
 ---
@@ -175,4 +175,12 @@ pip install matplotlib
 ## Generative AI Declaration
 
 * **Tools Used:** ChatGPT (OpenAI), Gemini (Google AI)
-* **Purpose:** Utilised for debugging Python syntax, structuring state-machine avoidance logic, code review when bad code was troubling our simulation, some result interpretation when results were random and unexpected, organising repository documentation and helping to edit/clean up.
+* **How We Used AI:** Generative AI was used strictly as a supporting tool for the project. Specifically, it helped us with:
+  
+    * Debugging Python syntax and troubleshooting code errors.
+      
+    * Bouncing ideas around for our obstacle-avoidance logic and navigation structure.
+      
+    * Organising and formatting the documentation in this README.
+      
+* **Student Statement:** All design choices, code development, simulation testing, and final reviews were fully carried out and verified by our team.
