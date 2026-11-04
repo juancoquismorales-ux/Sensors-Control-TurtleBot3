@@ -86,11 +86,13 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
     * **Purpose:** Displays estimation errors plotted against $\pm 3\sigma$ bounds. The observed errors remain within these bounds, suggesting that the filter's uncertainty estimation appears conservative. Uncertainty reductions align with camera update intervals, while the plotting pipeline logs predictions prior to each camera correction step.
 
 3. **`Trial evaluation`:**
-    * Between each trial we varied the starting y positions in each one. Additionally in trials 1 and 3 a black wall was removed illustrating that TurtleBot could adapt to new situations etc. Throughout all trials our controller setting did not vary so all trials portrayed the same version of our controller code.
-4. **`Failiures`:** 
-    * Amongst each trial run our simulation did not encounter any major failiures, however, through our graph analysis we can understand that TB experienced heading drift on multiple occasions and some weird avoidance detouring made the run uneffective. Some of these errors occurred due to wheel slip from the TB, but through our camera reading our EKF estimations were able to be rectified and improved.
+    * Between each trial we varied the starting y positions in each one. Additionally, in trials 1 and 3, a black wall was removed, illustrating that TurtleBot could adapt to new situations etc. Throughout all trials our controller setting did not vary so all trials portrayed the same version of our controller code.
+    * 
+4. **`Failiures and Limitations`:** 
+    * Amongst each trial run our simulation did not encounter any major failures, however, through our graph analysis, we can understand that TB experienced heading drift on multiple occasions and some weird avoidance detouring made the run ineffective. Some of these errors occurred due to wheel slip from the TB combined with motion-model mismatches, but through our camera readings our EKF estimations were able to be rectified and improved.
+    * 
 5.  **`Trade-offs`:** 
-     * Throughout the code production we encountered two impactful trade-offs,  TurtleBot efficiency or safe and more reliable movements, accurae estimation or  better camera-marker visibility . We decided that saftey was key in this project so our detours substantially increased time, however, our system then had much more time to respond to upcomming obstacles. Additionally, we chose to implement a better camera system as we would then have better marker 7 readings to to correct the EKF estimation errors (this only worked when marker was in camera view). 
+     * Throughout the code production, we encountered two impactful trade-offs: TurtleBot efficiency vs. safe and more reliable movements, and accurate estimation vs. better camera-marker visibility. We decided that safety was key in this project, so our detours substantially increased time, however, our system then had much more time to respond to upcoming obstacles. Additionally, we chose to implement a better camera system as we would then have better marker 7 readings to correct the EKF estimation errors (this only worked when the marker was in camera view).
 ---
 
 ## Demo Video
@@ -163,6 +165,10 @@ pip install matplotlib
 1. **Generate the ArUco marker asset:**
    ```bash
    python aruco.py
+   ```
+
+2. **Run the simulation and EKF pipeline:**
+   ```bash
    python sim.py
    ```
 
