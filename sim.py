@@ -2,8 +2,9 @@ import time
 import mujoco
 import mujoco.viewer
 import cv2
-from pathlib import Path
 import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
 from model import TurtleBot3Model
 from estimator import TurtleBot3EKF
 from controller import TurtleBot3Controller
@@ -109,6 +110,15 @@ docked = False # remember successful dock sequence
 last_marker_time = -np.inf # recored last successful detection
 docking_distance = 0.19  # week 9s camera-marker depth 
 
+# ============================================================
+# Derek's Section: Telemetry Logging for Graphs
+# ============================================================
+
+log_time = []
+log_true_x, log_true_y, log_true_theta = [], [], []
+log_est_x, log_est_y, log_est_theta = [], [], []
+log_sigma_x, log_sigma_y, log_sigma_theta = [], [], []
+
 next_viewer_update = 0 # schedule viewer updates seperatly 
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
@@ -126,6 +136,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # =============================================================================
         # Derek's Section: Odometry Prediction and EKF Update Loop
         # =============================================================================
+        
          # calculate the forward distance and heading change based on wheel rotations
         d_forward = 0.5 * wheel_radius * (dphi_L + dphi_R)
         d_heading = odometry_turn_scale * wheel_radius * (dphi_R - dphi_L) / track_width
@@ -135,6 +146,27 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         measured_v = d_forward / dt # calculate the measured forward speed in m/s
         measured_omega = d_heading / dt # calculate the measured turn rate in rad/s
         estimated_state = ekf.predict(measured_v, measured_omega) # predict the next state using the EKF
+        
+        # =============================================================================
+        # Derek's Section: Log Telemetry Data for Graphs at Every Step
+        # =============================================================================
+
+        base_pose_log = data.joint("base_joint").qpos.copy()
+        t_x, t_y = float(base_pose_log[0]), float(base_pose_log[1])
+        qw_l, qx_l, qy_l, qz_l = base_pose_log[3:7]
+        t_heading = np.arctan2(2 * (qw_l * qz_l + qx_l * qy_l), 1 - 2 * (qy_l**2 + qz_l**2))
+        sigmas = np.sqrt(np.diag(ekf.P))
+        
+        log_time.append(data.time)
+        log_true_x.append(t_x)
+        log_true_y.append(t_y)
+        log_true_theta.append(t_heading)
+        log_est_x.append(estimated_state[0])
+        log_est_y.append(estimated_state[1])
+        log_est_theta.append(estimated_state[2])
+        log_sigma_x.append(sigmas[0])
+        log_sigma_y.append(sigmas[1])
+        log_sigma_theta.append(sigmas[2])
 
         # =============================================================================
         # Juan's Section: Camera Frame Rendering and ArUco Marker Detection
@@ -331,3 +363,73 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         time_until_next_step = (model.opt.timestep / 3) - (time.time() - step_start)
         if time_until_next_step > 0:
             time.sleep(time_until_next_step)       
+            
+    # ===================================================================================
+    # Derek's Section: Automatic Graph Generation
+    # ===================================================================================
+    
+    print("Simulation finished. Generating performance and error consistency plots")
+    
+    t = np.array(log_time)
+    tx, ty, t_theta = np.array(log_true_x), np.array(log_true_y), np.array(log_true_theta)
+    ex, ey, e_theta = np.array(log_est_x), np.array(log_est_y), np.array(log_est_theta)
+    sig_x = np.array(log_sigma_x)
+    sig_y = np.array(log_sigma_y)
+    sig_theta = np.array(log_sigma_theta)
+
+    err_x = ex - tx
+    err_y = ey - ty
+    err_theta = e_theta - t_theta
+    err_theta = np.arctan2(np.sin(err_theta), np.cos(err_theta))
+
+    repo_folder = Path(__file__).parent
+
+    plt.figure(figsize=(10, 6), dpi=300)
+    plt.plot(tx, ty, label='Ground Truth (Simulator)', color='black', linewidth=2)
+    plt.plot(ex, ey, label='EKF Estimate', color='blue', linestyle='--', linewidth=1.5)
+    plt.xlabel('X Position [m]', fontsize=12)
+    plt.ylabel('Y Position [m]', fontsize=12)
+    plt.title('TurtleBot3 Track A: EKF Trajectory vs Ground Truth', fontsize=14, fontweight='bold')
+    plt.legend(fontsize=11)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    traj_path = repo_folder / 'trajectory_comparison.png'
+    plt.savefig(traj_path, dpi=300)
+    plt.close() 
+
+    fig, axs = plt.subplots(3, 1, figsize=(10, 9), dpi=300, sharex=True)
+
+    axs[0].plot(t, err_x, label='X Error', color='blue', linewidth=1.5)
+    axs[0].plot(t, 3 * sig_x, label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[0].plot(t, -3 * sig_x, label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[0].fill_between(t, -3 * sig_x, 3 * sig_x, color='purple', alpha=0.15)
+    axs[0].set_ylabel('X Error [m]', fontsize=11)
+    axs[0].legend(loc='upper right', fontsize=10)
+    axs[0].grid(True, linestyle='--', alpha=0.6)
+
+    axs[1].plot(t, err_y, label='Y Error', color='blue', linewidth=1.5)
+    axs[1].plot(t, 3 * sig_y, label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[1].plot(t, -3 * sig_y, label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[1].fill_between(t, -3 * sig_y, 3 * sig_y, color='purple', alpha=0.15)
+    axs[1].set_ylabel('Y Error [m]', fontsize=11)
+    axs[1].legend(loc='upper right', fontsize=10)
+    axs[1].grid(True, linestyle='--', alpha=0.6)
+
+    axs[2].plot(t, np.rad2deg(err_heading := err_theta), label='Heading Error', color='blue', linewidth=1.5)
+    axs[2].plot(t, np.rad2deg(3 * sig_theta), label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[2].plot(t, -np.rad2deg(3 * sig_theta), label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    axs[2].fill_between(t, -np.rad2deg(3 * sig_theta), np.rad2deg(3 * sig_theta), color='purple', alpha=0.15)
+    axs[2].set_xlabel('Time [s]', fontsize=11)
+    axs[2].set_ylabel('Heading Error [deg]', fontsize=11)
+    axs[2].legend(loc='upper right', fontsize=10)
+    axs[2].grid(True, linestyle='--', alpha=0.6)
+
+    plt.suptitle('EKF State Estimation Error & 3-Sigma Consistency Bounds', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+
+    bounds_path = repo_folder / 'ekf_error_bounds.png'
+    plt.savefig(bounds_path, dpi=300)
+    plt.close()
+
+    print(f"Graphs successfully saved")
