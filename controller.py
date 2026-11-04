@@ -93,11 +93,11 @@ class TurtleBot3Controller:
                 # return the normal control commands to waypoint if the path is clear
                 return self.compute_control_command(current_state, target_waypoint)
 
-                left_clearance = np.mean(np.minimum(lidar_ranges[60:120], 6))
-                right_clearance = np.mean(np.minimum(lidar_ranges[240:300], 6))
+            left_clearance = np.mean(np.minimum(lidar_ranges[60:120], 6))
+            right_clearance = np.mean(np.minimum(lidar_ranges[240:300], 6))
 
-                # determine the avoidance direction, 1.0 to the left and -1.0 to the right
-                self.avoid_direction = (1.0 if left_clearance >= right_clearance else -1.0)
+            # determine the avoidance direction, 1.0 to the left and -1.0 to the right
+            self.avoid_direction = (1.0 if left_clearance >= right_clearance else -1.0)
             
             # set the boolean flag aoviding to true to start avoidance
             self.avoiding = True
