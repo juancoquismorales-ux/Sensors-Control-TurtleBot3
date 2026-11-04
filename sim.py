@@ -114,9 +114,13 @@ docking_distance = 0.19  # week 9s camera-marker depth
 # Derek's Section: Telemetry Logging for Graphs
 # ============================================================
 
+# create list to store the simulation timestamps
 log_time = []
+# create list to store ground truth x, y positions and theta headings
 log_true_x, log_true_y, log_true_theta = [], [], []
+# create list to store EKF estimated x, y positions and theta headings
 log_est_x, log_est_y, log_est_theta = [], [], []
+# create list to store EKF standard deviations (sigma) for x, y, and thetea heading
 log_sigma_x, log_sigma_y, log_sigma_theta = [], [], []
 
 next_viewer_update = 0 # schedule viewer updates seperatly 
@@ -151,21 +155,36 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # Derek's Section: Log Telemetry Data for Graphs at Every Step
         # =============================================================================
 
+        # copy the current base joint qpos array to get simulator ground truth pose
         base_pose_log = data.joint("base_joint").qpos.copy()
+        # get the ground truth x and y coordinate from the base position array
         t_x, t_y = float(base_pose_log[0]), float(base_pose_log[1])
+        # get the quaternio components representing the true turtlebots orientation
         qw_l, qx_l, qy_l, qz_l = base_pose_log[3:7]
+        # calculate the true yaw heading angle from the orientation quaternion
         t_heading = np.arctan2(2 * (qw_l * qz_l + qx_l * qy_l), 1 - 2 * (qy_l**2 + qz_l**2))
+        # get teh standard deviations form the diagonola of the EKF covariance matrix
         sigmas = np.sqrt(np.diag(ekf.P))
         
+        # append the current simulation timestamp to the time log list
         log_time.append(data.time)
+        # append the current ground truth x position to teh true x log list
         log_true_x.append(t_x)
+        # append the ground truth y position to the true y log list
         log_true_y.append(t_y)
+        # append the calculated true heading angle to the true theta log list
         log_true_theta.append(t_heading)
+        # append the EKF estimated x position to teh estimated x log list
         log_est_x.append(estimated_state[0])
+        # append the EKF estimated y position to the estiamted y log list
         log_est_y.append(estimated_state[1])
+        # append the EKF estimated heading angle to the estimated theta log list
         log_est_theta.append(estimated_state[2])
+        # append the EKF x position standard deviation sigma to the x sigma log list
         log_sigma_x.append(sigmas[0])
+        # append the EKF y position standard deviation sigma to the y sigam log list
         log_sigma_y.append(sigmas[1])
+        # append the EKF heading standard deviation sigma to the theta heading sigma log list
         log_sigma_theta.append(sigmas[2])
 
         # =============================================================================
@@ -207,6 +226,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # ===========================================================================================
         # Derek's Section: Waypoint Tracking, State Machine adn Visual Docking
         # ===========================================================================================
+        
         distance_to_goal = np.linalg.norm(target_waypoint[:2] - estimated_state[:2])
         if distance_to_goal < 0.1 and waypoint_idx < len(waypoints) - 1:
             waypoint_idx += 1
@@ -368,68 +388,121 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
     # Derek's Section: Automatic Graph Generation
     # ===================================================================================
     
+    # print a status message to show the simulation has finished and the plots are being created
     print("Simulation finished. Generating performance and error consistency plots")
     
+    # convert the logged simulation time list into an array for vector operation
     t = np.array(log_time)
+    # convert the ground truth positions an dheading lists into arrays
     tx, ty, t_theta = np.array(log_true_x), np.array(log_true_y), np.array(log_true_theta)
+    # convert the EKF estimated position and heading lists into arrays
     ex, ey, e_theta = np.array(log_est_x), np.array(log_est_y), np.array(log_est_theta)
+    # convert the standard deviation sigma x list into arrays for error bound calcuations
     sig_x = np.array(log_sigma_x)
+    # convert the standard deviation sigma y list into arrays for error bound calculations
     sig_y = np.array(log_sigma_y)
+    # convert the standard deviation sigma theta list into arrays for error bound calculations
     sig_theta = np.array(log_sigma_theta)
 
+    # calculate the positiont error in the x position, subtracting ground trutyh from the estimate
     err_x = ex - tx
+    # calculate teh position error in teh y position, subtracting ground truth from the estimate
     err_y = ey - ty
+    # calculate the raw heading error, subtracting ground truth from estimated orientation
     err_theta = e_theta - t_theta
+    # wrap the caluculated heading error and bound it betwee -pi and pi
     err_theta = np.arctan2(np.sin(err_theta), np.cos(err_theta))
 
+    # set the directory folder to be the repository folder
     repo_folder = Path(__file__).parent
 
+    # start a new matplotlib figure canvas with dimensions
     plt.figure(figsize=(10, 6), dpi=300)
+    # plot the simulator ground truth trajectory line in black with a solid line
     plt.plot(tx, ty, label='Ground Truth (Simulator)', color='black', linewidth=2)
+    # plot the EKF estimated trajectory path in blue with a dashed line
     plt.plot(ex, ey, label='EKF Estimate', color='blue', linestyle='--', linewidth=1.5)
+    # set the x axis label and set the font size
     plt.xlabel('X Position [m]', fontsize=12)
+    # set the y axis label adn set the font size
     plt.ylabel('Y Position [m]', fontsize=12)
+    # set the main title fo the trajectorty comparison plot
     plt.title('TurtleBot3 Track A: EKF Trajectory vs Ground Truth', fontsize=14, fontweight='bold')
+    # display teh legend box on the plto, and set teh font size
     plt.legend(fontsize=11)
+    # set the background grid lines as dashed and transparency
     plt.grid(True, linestyle='--', alpha=0.6)
+    # adjust the subplot parameters to prevent clipping of labels adn titles
     plt.tight_layout()
 
+    # define the complete file path for saving the trajectory comparison image and set the name
     traj_path = repo_folder / 'trajectory_comparison.png'
+    # save the trajectory plot and resolution
     plt.savefig(traj_path, dpi=300)
+    # close the current figure window
     plt.close() 
 
+    # create a figure containing 3 stacked plots vertically, with same size
     fig, axs = plt.subplots(3, 1, figsize=(10, 9), dpi=300, sharex=True)
 
+    # plot teh x axis estimation error over time on the first subplot
     axs[0].plot(t, err_x, label='X Error', color='blue', linewidth=1.5)
+    # plot the positive 3 sigma upper bounds line for the x error
     axs[0].plot(t, 3 * sig_x, label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # plot teh negative 3 sigma lower bounds line for the x error
     axs[0].plot(t, -3 * sig_x, label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # fill teh region between the upper and lower 3 sigma bounds to show the confidence interval
     axs[0].fill_between(t, -3 * sig_x, 3 * sig_x, color='purple', alpha=0.15)
+    # set teh y axis label for the x error subplot
     axs[0].set_ylabel('X Error [m]', fontsize=11)
+    # position the legend in teh upper right corner of the x error subplot
     axs[0].legend(loc='upper right', fontsize=10)
+    # enable the grid lines on teh x error subplot
     axs[0].grid(True, linestyle='--', alpha=0.6)
-
+    
+    # plot the y axis estimation error over time on the second subpolot
     axs[1].plot(t, err_y, label='Y Error', color='blue', linewidth=1.5)
+    # plot teh positive 3 sigma upper bounds line for the y error
     axs[1].plot(t, 3 * sig_y, label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # plot the negative 3 sigma lower bounds line for the y error
     axs[1].plot(t, -3 * sig_y, label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # fill the region between the upper and lower 3 sigma bounds to show the confidence intervanl
     axs[1].fill_between(t, -3 * sig_y, 3 * sig_y, color='purple', alpha=0.15)
+    # set the y axis label for the y erorr subplot
     axs[1].set_ylabel('Y Error [m]', fontsize=11)
+    # position the legend in teh upper right corner of the y error subplot
     axs[1].legend(loc='upper right', fontsize=10)
+    # enable the grid lines on the y error subplot
     axs[1].grid(True, linestyle='--', alpha=0.6)
 
+    # convert the heading error to degrees and plot it on the third subplot
     axs[2].plot(t, np.rad2deg(err_heading := err_theta), label='Heading Error', color='blue', linewidth=1.5)
+    # plot the positive 3 sigma upper bounds line for the heading error in degrees
     axs[2].plot(t, np.rad2deg(3 * sig_theta), label='+3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # plot the negative 3 sigma lower bounds line for the heading error in degrees
     axs[2].plot(t, -np.rad2deg(3 * sig_theta), label='-3σ Bound', color='purple', linestyle='--', linewidth=1.2)
+    # fill the confidence interval region between the upper and lower 3 sigma bounds
     axs[2].fill_between(t, -np.rad2deg(3 * sig_theta), np.rad2deg(3 * sig_theta), color='purple', alpha=0.15)
+    # set teh x axis label for the bottom subplot representing time
     axs[2].set_xlabel('Time [s]', fontsize=11)
+    # set the y axis label for heading error subnplot in degrees
     axs[2].set_ylabel('Heading Error [deg]', fontsize=11)
+    # position the legend in the upper right corner of the heading error subplot
     axs[2].legend(loc='upper right', fontsize=10)
+    # enable the grid lines on the heading error subplots
     axs[2].grid(True, linestyle='--', alpha=0.6)
 
+    # set the over all title for the three consistency subplots
     plt.suptitle('EKF State Estimation Error & 3-Sigma Consistency Bounds', fontsize=14, fontweight='bold')
+    # adjust the spacing and padding across all subplots to avoid any overlapping elements
     plt.tight_layout()
 
+    # define the complete file path for saving the error bounds consistency image
     bounds_path = repo_folder / 'ekf_error_bounds.png'
+    # save the error bounds figure at a high resolution
     plt.savefig(bounds_path, dpi=300)
+    # close the figure instance
     plt.close()
 
+    # print the confirmation that the pltos were saved to the repository
     print(f"Graphs successfully saved")

@@ -4,7 +4,7 @@ Welcome to **Group 80's** repository for the Integrated Project for **Track A** 
 
 An end-to-end autonomous navigation, state estimation, and visual docking pipeline for a TurtleBot3 Waffle Pi simulated in MuJoCo. Built for Track A.
 
-The robot safely navigates a structured room, avoids obstacles using 360-degree LiDAR ray casting, tracks its position via an Extended Kalman Filter (EKF) operating on estimated states, and docks precisely onto an ArUco-marked charging station.
+The turtlebot safely navigates a structured room, avoids obstacles using 360-degree LiDAR ray casting, tracks its position via an Extended Kalman Filter (EKF) operating on estimated states, and docks precisely onto an ArUco-marked charging station.
 
 ---
 
@@ -17,7 +17,7 @@ The robot safely navigates a structured room, avoids obstacles using 360-degree 
 
 ## Individual Contributions & Statement
 
-* **Juan Coquis Morales (25807761):** Designed the MuJoCo simulation environment, built the custom room track layout (`simRoom.xml`), and managed version control. Responsibilities included developing the ArUco marker generator (`aruco.py`), the LiDAR ray-casting sensor model (`lidar.py`), and co-developing the main simulation loop (`sim.py).
+* **Juan Coquis Morales (25807761):** Designed the MuJoCo simulation environment, built the custom room track layout (`simRoom.xml`), and managed version control. Responsibilities included developing the ArUco marker generator (`aruco.py`), the LiDAR ray-casting sensor model (`lidar.py`), and co-developing the main simulation loop (`sim.py`).
 
 * **Derek Chua:** Responsible for developing the Extended Kalman Filter state estimator (`estimator.py`) with sensor noise, built the waypoint tracking and LiDAR obstacle avoidance controller (`controller.py`), co-developed the main simulation loop (`sim.py`), and defined the platform kinematic model (`model.py`).
 
@@ -31,7 +31,7 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 * **`controller.py`:** The navigation and control script. Its purpose is to calculate the unicycle proportional steering commands (`compute_control_command`) to reach target waypoints, and manage LiDAR avoidance state machine (`compute_obstacle_avoidance_command`) to safely steer around obstacles.
 
-* **`estimator.py`:** The state estimation script. Its purpose is to implement an Extended Kalman Filter (EKF) that integrates the wheel encoder odometry predictions with real-time camera measurements (range and bearing to ArUco Marker 7) to mitigate drift.
+* **`estimator.py`:** The state estimation script. Its purpose is to implement an Extended Kalman Filter ($EKF$) that integrates the wheel encoder odometry predictions with real-time camera measurements (range and bearing to ArUco Marker 7) to mitigate drift.
 
 * **`model.py`:** The kinematic modelling script. Its purpose is to define the non-linear unicycle equations of motion and evaluate system controllability and observability via matrix analysis.
 
@@ -41,9 +41,25 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 * **`simRoom.xml`:** The custom room simulation scene file. Its purpose is to define the 3D environment layout in MuJoCo, including room boundaries, internal obstacles (`Block1`, `Block2`, `Block3`), and charging station.
 
-* **`turtlebot3_waffle_pi.xml`:** The core robot model file. Its purpose is to configure the Waffle Pi physical properties, wheel joints, velocity actuators, LiDAR sensor site, and front camera specifications.
+* **`turtlebot3_waffle_pi.xml`:** The core turtlebot model file. Its purpose is to configure the Waffle Pi physical properties, wheel joints, velocity actuators, LiDAR sensor site, and front camera specifications.
+
+* **`trajectory_comparison.png` & `ekf_error_bounds.png`:** The evaluation and performance graphs. Its purpose is to provide quantitative evidence of the filter consistency and trajectory tracking by comparing EKF estimates against simulator ground truth.
 
 * **`robotis_tb3/assets/`:** The asset folder. Its purpose is to store 3D mesh files (`.stl`) and textures (`.jpg` / `.png`) required for rendering physical geometries in MuJoCo.
+
+---
+
+## Evaluation Graphs & Quantitative Output
+
+Upon closing the simulation window, `sim.py` automatically processes the logged telemetry data and saves two high-resolution performance graphs directly into the repository workspace. Satisfying the rubric's quantitative evaluation requirements.
+
+1. **`trajectory_comparison.png`:**
+    * **What it shows:** A top-down 2D room plot comparing the turtlebot's actual trajectory from simulator ground truth (`black line`) against the EKF estimated path(`blue dashed line`).
+    * **Purpose:** Visually validates that the state estimator and controller successfully guides the TurtleBot3 through the workspace and onto the docking station without diverging.
+
+2. **`ekf_error_bounds.png`:**
+    * **What is shows:** Time-series error plots for position ($X$ and $Y$) and heading ($\theta$), bounded by $\pm 3\sigma$ consistency limits (`purple dashed lines` with shaded uncertainty regions).
+    * **Purpose:** Proves EKF mathematical consistency. The error lines remain strictly bounded within the $\pm 3\sigma$ confidence intervals. Furthermore, the sharp pinch points in the uncertainty bands highlight the exact moments the camera sees the ArUco Marker 7. Fusing the external range/bearing data to constrain dead-reckoning drift.
 
 ---
 
@@ -51,11 +67,11 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 * **Part A: Modelling (`model.py`):** We derived the non-linear unicycle kinematics model for the TurtleBot3 and performed linearisation and rank checks on the system matrices to verify that the system is fully controllable and observable.
 
-* **Part B & C: Sensing & Estimation (`estimator.py`, `aruco.py`, `lidar.py`):** Structured coordinate transformations map local sensor measurements into global positions and project 3D points onto the 2D image plane. The EKF deliberately balances process noise and camera measurement covariance to maintain filter consistency and handle brief line-of-sight occlusions.
+* **Part B & C: Sensing & Estimation (`estimator.py`, `aruco.py`, `lidar.py`):** Structured coordinate transformations map local sensor measurements into global positions and project 3D points onto the 2D image plane. The EKF deliberately balances process noise $Q$ and camera measurement covariance $R$ to maintain filter consistency and handle brief line-of-sight occlusions.
 
-* **Part D: Control & Obstacle Avoidance (`controller.py`):** Waypoint tracking uses proportional error laws bounded by the Waffle Pi hardware constraints. When the front LiDAR cone detects an obstacle within a threshold limit, the robot executes the avoidance turn and uses side-indices LiDAR tracking to safely move around the barrier until the route clears.
+* **Part D: Control & Obstacle Avoidance (`controller.py`):** Waypoint tracking uses proportional error laws bounded by the Waffle Pi hardware constraints. When the front LiDAR cone detects an obstacle within a threshold limit, the turtlebot executes the avoidance turn and uses side-indices LiDAR tracking to safely move around the barrier until the route clears.
 
-* **Part E: Integration & Robustness (`sim.py`):** The pipeline executes end-to-end seamlessly in MuJoCo. Upon clearing waypoints, the system transitions into a visual docking loop, aligning with and stopping withint the ArUco Marker 7.
+* **Part E: Integration & Robustness (`sim.py`):** The pipeline executes end-to-end seamlessly in MuJoCo. Upon clearing waypoints, the system transitions into a visual docking loop, aligning with and stopping within $0.19\text{ m}$ the ArUco Marker 7.
 
 ---
 
@@ -104,6 +120,7 @@ Install MuJoCo, OpenCV, and Numpy
 pip install mujoco
 pip install opencv-python
 pip install numpy
+pip install matplotlib
 ```
 
 ## Generative AI Declaration
