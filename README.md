@@ -4,7 +4,7 @@ Welcome to **Group 80's** repository for the Integrated Project for **Track A** 
 
 An end-to-end autonomous navigation, state estimation, and visual docking pipeline for a TurtleBot3 Waffle Pi simulated in MuJoCo. Built for Track A.
 
-The turtlebot safely navigates a structured room, avoids obstacles using 360-degree LiDAR ray casting, tracks its position via an Extended Kalman Filter (EKF) operating on estimated states, and docks precisely onto an ArUco-marked charging station.
+The TurtleBot safely navigates a structured room, avoids obstacles using 360-degree LiDAR ray casting, tracks its position via an Extended Kalman Filter (EKF) operating on estimated states, and docks precisely onto an ArUco-marked charging station.
 
 ---
 
@@ -53,17 +53,17 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 * **`sim.py`:** The main execution script. Its purpose is to run the real-time MuJoCo physics loop, process camera frames for ArUco decoding, update the EKF state estimation, and manage control switching between waypoint navigation, obstacle avoidance, and visual docking.
 
-* **`controller.py`:** The navigation and control script. Its purpose is to calculate the unicycle proportional steering commands (`compute_control_command`) to reach target waypoints, and manage LiDAR avoidance state machine (`compute_obstacle_avoidance_command`) to safely steer around obstacles.
+* **`controller.py`:** The navigation and control script. Its purpose is to calculate the unicycle proportional steering commands (`compute_control_command`) to reach target waypoints, and manage the LiDAR avoidance state machine (`compute_obstacle_avoidance_command`) to safely steer around obstacles.
 
 * **`estimator.py`:** The state estimation script. Its purpose is to implement an Extended Kalman Filter ($EKF$) that integrates the wheel encoder odometry predictions with real-time camera measurements (range and bearing to ArUco Marker 7) to mitigate drift.
 
 * **`model.py`:** The kinematic modelling script. Its purpose is to define the non-linear unicycle equations of motion and evaluate system controllability and observability via matrix analysis.
 
-* **`lidar.py`:** The sensor simulation script. Its purpose is to cast virtual laser rays through the MuJoCo physics engine to simulate 360-degree LiDAR scanner providing clean distance profiles.
+* **`lidar.py`:** The sensor simulation script. Its purpose is to cast virtual laser rays through the MuJoCo physics engine to simulate a 360-degree LiDAR scanner providing clean distance profiles.
 
 * **`aruco.py`:** The marker generator script. Its purpose is to create and export the visual ArUco Marker 7 texture asset used on the charging station.
 
-* **`simRoom.xml`:** The custom room simulation scene file. Its purpose is to define the 3D environment layout in MuJoCo, including room boundaries, internal obstacles (`Block1`, `Block2`, `Block3`), and charging station.
+* **`simRoom.xml`:** The custom room simulation scene file. Its purpose is to define the 3D environment layout in MuJoCo, including room boundaries, internal obstacles (`Block1`, `Block2`, `Block3`), and the charging station.
 
 * **`turtlebot3_waffle_pi.xml`:** The core turtlebot model file. Its purpose is to configure the Waffle Pi physical properties, wheel joints, velocity actuators, LiDAR sensor site, and front camera specifications.
 
@@ -86,10 +86,10 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
     * **Purpose:** Displays estimation errors plotted against $\pm 3\sigma$ bounds. The observed errors remain within these bounds, suggesting that the filter's uncertainty estimation appears conservative. Uncertainty reductions align with camera update intervals, while the plotting pipeline logs predictions prior to each camera correction step.
 
 3. **`Trial evaluation`:**
-    * Between each trial we varied the starting y positions in each one. Additionally, in trials 1 and 3, a black wall was removed, illustrating that TurtleBot could adapt to new situations etc. Throughout all trials our controller setting did not vary so all trials portrayed the same version of our controller code.
+    * Between each trial, we varied the starting y positions in each one. Additionally, in trials 1 and 3, a black wall was removed, illustrating that TurtleBot could adapt to new situations etc. Throughout all trials, our controller setting did not vary, so all trials portrayed the same version of our controller code.
     * 
-4. **`Failiures and Limitations`:** 
-    * Amongst each trial run our simulation did not encounter any major failures, however, through our graph analysis, we can understand that TB experienced heading drift on multiple occasions and some weird avoidance detouring made the run ineffective. Some of these errors occurred due to wheel slip from the TB combined with motion-model mismatches, but through our camera readings our EKF estimations were able to be rectified and improved.
+4. **` Failures and Limitations`:** 
+    * Amongst each trial run, our simulation did not encounter any major failures, however, through our graph analysis, we can understand that TB experienced heading drift on multiple occasions, and some weird avoidance detouring made the run ineffective. Some of these errors occurred due to wheel slip from the TB combined with motion-model mismatches, but through our camera readings, our EKF estimations were able to be rectified and improved.
     * 
 5.  **`Trade-offs`:** 
      * Throughout the code production, we encountered two impactful trade-offs: TurtleBot efficiency vs. safe and more reliable movements, and accurate estimation vs. better camera-marker visibility. We decided that safety was key in this project, so our detours substantially increased time, however, our system then had much more time to respond to upcoming obstacles. Additionally, we chose to implement a better camera system as we would then have better marker 7 readings to correct the EKF estimation errors (this only worked when the marker was in camera view).
@@ -151,7 +151,7 @@ Upgrade `pip` to the latest version inside the environment
 pip install --upgrade pip
 ```
 
-Install MuJoCo, OpenCV, and Numpy
+Install MuJoCo, OpenCV, and NumPy
 
 ```bash
 pip install mujoco
