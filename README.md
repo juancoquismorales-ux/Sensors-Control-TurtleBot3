@@ -75,7 +75,7 @@ Below is a detailed list of every file in the repository, explaining what it is 
 
 ## Evaluation Graphs & Quantitative Output
 
-Upon closing the simulation window, `sim.py` automatically processes the logged telemetry data and saves two high-resolution performance graphs directly into the repository workspace. Satisfying the rubric's quantitative evaluation requirements.
+Upon closing the simulation window, `sim.py` automatically processes the logged telemetry data and saves two high-resolution performance graphs directly into the repository workspace.
 
 1. **`trajectory_comparison.png` (Estimated vs Actual Path):**
     * **What it shows:** A top-down 2D room plot comparing the TurtleBot's actual trajectory from simulator ground truth (`black line`) against the EKF-estimated path (`blue dashed line`).
@@ -83,7 +83,7 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
 
 2. **`ekf_error_bounds.png`:**
     * **What it shows:** Time-series error plots for position ($X$ and $Y$) and heading ($\theta$), bounded by $\pm 3\sigma$ consistency limits (`purple dashed lines` with shaded uncertainty regions).
-    * **Purpose:** Displays estimation errors plotted against $\pm \sigma$ bounds. The observed errors remain within these bounds, suggesting that the filter's uncertainty estimation appears conservative. Uncertainty reductions align with camera update intervals, while the plotting pipeline logs predictions prior to each camera correction step.
+    * **Purpose:** Displays estimation errors plotted against $\pm 3\sigma$ bounds. The observed errors remain within these bounds, suggesting that the filter's uncertainty estimation appears conservative. Uncertainty reductions align with camera update intervals, while the plotting pipeline logs predictions prior to each camera correction step.
 
 3. **`Trial evaluation`:**
     * Between each trial we varied the starting y positions in each one. Additionally in trials 1 and 3 a black wall was removed illustrating that TurtleBot could adapt to new situations etc. Throughout all trials our controller setting did not vary so all trials portrayed the same version of our controller code.
@@ -157,6 +157,14 @@ pip install opencv-python
 pip install numpy
 pip install matplotlib
 ```
+
+### Step 5: Run the Project
+
+1. **Generate the ArUco marker asset:**
+   ```bash
+   python aruco.py
+   python sim.py
+   ```
 
 ## Generative AI Declaration
 
