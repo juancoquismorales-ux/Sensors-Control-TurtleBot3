@@ -63,6 +63,11 @@ Upon closing the simulation window, `sim.py` automatically processes the logged 
 
 ---
 
+## Demo Video
+- https://youtu.be/TFaz4NdPcP8 
+
+---
+
 ## Rubric Alignment & Criteria Breakdown (Parts A-E)
 
 * **Part A: Modelling (`model.py`):** We derived the non-linear unicycle kinematics model for the TurtleBot3 and performed linearisation and rank checks on the system matrices to verify that the system is fully controllable and observable.
