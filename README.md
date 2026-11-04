@@ -19,7 +19,7 @@ The TurtleBot safely navigates a structured room, avoids obstacles using 360-deg
 
 * **Juan Coquis Morales (25807761):** Designed the MuJoCo simulation environment, built the custom room track layout (`simRoom.xml`), and managed version control. Responsibilities included developing the ArUco marker generator (`aruco.py`), the LiDAR ray-casting sensor model (`lidar.py`), and co-developing the main simulation loop (`sim.py`).
 
-* **Derek Chua:** Responsible for developing the Extended Kalman Filter state estimator (`estimator.py`) with sensor noise, built the waypoint tracking and LiDAR obstacle avoidance controller (`controller.py`), co-developed the main simulation loop (`sim.py`), and defined the platform kinematic model (`model.py`).
+* **Derek Chua (26067191):** Responsible for developing the Extended Kalman Filter state estimator (`estimator.py`) with sensor noise, built the waypoint tracking and LiDAR obstacle avoidance controller (`controller.py`), co-developed the main simulation loop (`sim.py`), and defined the platform kinematic model (`model.py`).
 
 ---
 
